@@ -1,0 +1,11 @@
+---
+description: CrewAI tools — Reddit, Serper, memory, optional Instagram
+globs: tools/**/*.py
+alwaysApply: false
+---
+
+# Tools
+
+- Reddit JSON uses disk cache under `~/.avcm-cache/reddit/` with backoff on HTTP errors.
+- Memory tools must align metadata keys with `memory/schema.py`.
+- **Instagram / Apify**: before changing `instagram_apify_tool.py`, use **`user-apify` MCP** (`search-actors`, `fetch-actor-details`) so `run_input` matches the actor schema. Reddit/Serper tools never require Apify.

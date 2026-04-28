@@ -1,0 +1,11 @@
+---
+description: AVCM global stack and workflows
+alwaysApply: true
+---
+
+# Project defaults
+
+- Package manager: **`uv`** (`uv sync`, `uv run`). Prefer `uv run pytest` / `uv run avcm`.
+- Python **3.11**. Load env from **`.env`** (never commit secrets).
+- Default LLM: **`gpt-4.1-nano`** (`OPENAI_MODEL`). Social signals default to **Reddit** only; Instagram is opt-in (`include_instagram`).
+- Chroma persistence defaults to `memory/performance_db`; embeddings **`text-embedding-3-small`** via OpenAI.

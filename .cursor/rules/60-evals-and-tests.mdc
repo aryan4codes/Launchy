@@ -1,0 +1,13 @@
+---
+description: Pytest and offline eval invariants
+globs:
+  - tests/**/*.py
+  - evals/**/*.py
+alwaysApply: false
+---
+
+# Tests
+
+- Mock external HTTP (`requests`, Reddit, Serper) and avoid live LLM calls in CI.
+- Prefer overriding `PipelineRunner` / FastAPI `get_pipeline_controller` for integration-style tests.
+- `evals/` may run deterministic heuristics — keep fixtures under `evals/fixtures/`.

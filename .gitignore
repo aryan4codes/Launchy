@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.env
+outputs/*.json
+!outputs/.gitkeep
+memory/performance_db/*
+!memory/performance_db/.gitkeep
+.pytest_cache/
+.cursor/workspace*

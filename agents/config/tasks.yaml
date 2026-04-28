@@ -1,0 +1,78 @@
+tasks:
+  - id: collect_signals
+    agent: trend_hunter
+    description: |
+      Niche (user brief — stay anchored to this): {niche}
+      Subreddits (comma-separated, no r/ prefix): {subreddits}
+      Run ID: {run_id}
+
+      Relevance rule: Every trend must plausibly matter to someone researching THIS niche. Drop viral or
+      off-topic items (unrelated geography, industry, or hobby) even if they are trendy elsewhere.
+
+      Steps:
+      1) Call reddit_top_signals with the subreddit list (limit ~15 per sub). Treat Reddit as supplemental.
+      2) Serper research — run multiple searches; start from these phrasing templates (vary slightly if needed):
+      {serper_query_hints}
+      3) Optionally scrape one or two promising URLs with read_website only if titles/snippets tie to the niche.
+      4) Optionally analyze_competitor_page on one URL only if it clearly serves the same niche.
+
+      Summarize exactly 10 trends as bullet lines: topic — source — engagement hint — recency note.
+    expected_output: Bullet list of exactly 10 niche-relevant trends with sources.
+
+  - id: map_psychology
+    agent: audience_psychologist
+    description: |
+      Niche: {niche}
+      From the trend list below only, map psychology per trend (ignore anything not aligned with this niche).
+      Output JSON-like text blocks per trend: primary_trigger, secondary_trigger, objections, phrases.
+    expected_output: Structured emotional profiles keyed by trend title.
+
+  - id: angles
+    agent: content_strategist
+    description: |
+      Niche: {niche}
+      Platforms to cover: {platforms}
+      Produce exactly {angles} content angles grounded in the trends above and this niche — no generic viral filler.
+      Each line must name angle title, primary platform (from list),
+      and recommended format (short post, thread outline, carousel outline).
+    expected_output: Numbered list of {angles} angles with platform + format.
+
+  - id: write_copy
+    agent: copywriter
+    description: |
+      Niche: {niche}
+      For each angle, write {variations} variations per platform in {platforms}.
+      Total combinations may be large — prioritize clarity and native tone per platform.
+      Include hook as first line per variation. Do not pivot to unrelated industries or regions unless the trend explicitly does.
+    expected_output: Structured blocks angle -> variations per platform.
+
+  - id: creative_briefs
+    agent: creative_director
+    description: |
+      Niche: {niche}
+      For every variation from the prior step, append a short creative brief:
+      visual_style, format_type (carousel/reel/static/thread), color mood, overlay notes.
+    expected_output: Same structure with briefs appended.
+
+  - id: score_and_memory
+    agent: performance_analyst
+    description: |
+      Run ID: {run_id}
+      Niche: {niche}
+      Top-K memory queries: {top_k_memory}
+
+      Rubric:
+      {rubric_block}
+
+      Instructions:
+      1) For each final content piece, call memory_query_similar with "{niche} | <hook>" before scoring.
+      2) Assign predicted_score 0-100 with 2-3 sentence reasoning.
+      3) Call memory_write_entry for EVERY piece with fields content_id (generate UUID string per piece),
+         topic (trend), hook (first line), platform, angle, predicted_score.
+      4) Flag recommended=true for the top 10 pieces by score within this run.
+
+      Produce structured JSON matching CrewFinalOutput: an object with key "pieces" only — array of scored items.
+      Each piece must include: content_id, trend, angle, platform, variation_number, body, creative_brief,
+      predicted_score (0-100), score_reasoning, recommended (boolean). Omit summary — the pipeline computes it.
+    expected_output: >-
+      CrewFinalOutput JSON — root object with only the key "pieces" (array of scored items). No summary field.

@@ -1,0 +1,12 @@
+---
+description: CrewAI YAML agents and tasks
+globs: agents/**/*
+alwaysApply: false
+---
+
+# Agents
+
+- Agent/task definitions live in `agents/config/agents.yaml` and `tasks.yaml`.
+- Default model string **`gpt-4.1-nano`** unless `OPENAI_MODEL` overrides.
+- When adding tools to Trend Hunter, register keys in `tool_sets` and map names in `crew_adapter.py`.
+- Sequential process — task order in YAML is authoritative.

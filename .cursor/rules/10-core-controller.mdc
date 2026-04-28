@@ -1,0 +1,11 @@
+---
+description: Core pipeline contracts — no CrewAI
+globs: core/**/*.py
+alwaysApply: false
+---
+
+# `core/`
+
+- Do **not** import `crewai`, `agents.*`, or `tools.*`. Keep IO orchestration in `pipeline.py` only.
+- Public API shapes live in `core/config.py` (`RunConfig`, `RunResult`, `ContentPiece`). LLM structured output uses **`CrewFinalOutput` / `CrewFinalPiece`** (flat, no nested summary — OpenAI JSON-schema limits).
+- Inject behavior via `PipelineRunner` protocol for tests and alternate backends.

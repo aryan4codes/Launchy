@@ -1,0 +1,11 @@
+---
+description: ChromaDB memory layer
+globs: memory/**/*.py
+alwaysApply: false
+---
+
+# Memory
+
+- Collection name: **`content_performance`** via `memory/chroma_client.py`.
+- Embedding model pinned to **`text-embedding-3-small`** (OpenAI embedding function).
+- CSV ingest columns: **`content_id`, `likes`, `shares`, `comments`** (`memory/update.py`). Delta uses `tools.scorer_rubric.engagement_index`.

@@ -1,0 +1,10 @@
+---
+description: FastAPI routes — delegate to PipelineController
+globs: api/**/*.py
+alwaysApply: false
+---
+
+# API
+
+- Routes stay thin: validate bodies (`RunConfig`), call `PipelineController`, return `RunResult`.
+- Do not embed CrewAI or tool logic in routers — extend `core/` or `agents/` instead.

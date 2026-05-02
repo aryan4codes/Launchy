@@ -8,5 +8,8 @@
     "env": {
       "VITE_API_ORIGIN": "https://lauchy.onrender.com"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
 }

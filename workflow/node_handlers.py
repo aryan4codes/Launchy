@@ -1,0 +1,249 @@
+"""Registered node implementations (sync; engine offloads with asyncio.to_thread)."""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import uuid
+from typing import Any
+
+from tools.memory_query import build_memory_query_tool
+from tools.memory_write import build_memory_write_tool
+from tools.reddit_tool import reddit_top_signals
+from workflow.context import NodeExecContext
+from workflow.nodes.gemini_image_node import run_gemini_image_node
+from workflow.render import merge_context, render_template
+from workflow.schema import (
+    CrewAIParams,
+    GeminiImageParams,
+    MemoryQueryParams,
+    MemoryWriteParams,
+    OutputPiecesParams,
+    RedditSourceParams,
+    ScrapeURLParams,
+    SerperSourceParams,
+    TransformTemplateParams,
+    TriggerInputParams,
+)
+
+_LOG = logging.getLogger(__name__)
+
+
+def _invoke_tool_like(tool: object, kwargs: dict[str, Any]) -> str | Any:
+    run = getattr(tool, "run", None)
+    if callable(run):
+        try:
+            out = run(**kwargs)
+            content = getattr(out, "content", None)
+            if content is not None:
+                return content
+            return out if isinstance(out, str) else out
+        except TypeError:
+            if len(kwargs) == 1:
+                only = next(iter(kwargs.values()))
+                out = run(only)
+                content = getattr(out, "content", None)
+                if content is not None:
+                    return content
+                return out if isinstance(out, str) else out
+    invoke = getattr(tool, "invoke", None)
+    if callable(invoke):
+        return invoke(kwargs)
+    _run = getattr(tool, "_run", None)
+    if callable(_run):
+        return _run(**kwargs)
+    raise TypeError(f"No invokable run/invoke/_run on {type(tool)!r}")
+
+
+def _run_crewai_single_task(ctx: NodeExecContext, p: CrewAIParams) -> dict[str, Any]:
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    task_desc = render_template(p.task_description_template, template_ctx)
+    exp_out = render_template(p.expected_output, template_ctx)
+    model = os.environ.get("OPENAI_MODEL", "gpt-4.1-nano")
+
+    from crewai import Agent, Crew, Process, Task
+
+    agent = Agent(
+        role=p.role,
+        goal=p.goal,
+        backstory=p.backstory,
+        tools=[],
+        llm=model,
+        verbose=False,
+    )
+    task = Task(description=task_desc, expected_output=exp_out, agent=agent)
+    crew = Crew(agents=[agent], tasks=[task], process=Process.sequential, verbose=False)
+    try:
+        result = crew.kickoff(inputs={})
+        raw = getattr(result, "raw", str(result))
+        return {"raw": raw, "text": raw}
+    except Exception as e:
+        _LOG.warning("crewai node failed: %s", e)
+        raise
+
+
+def handler_trigger_input(ctx: NodeExecContext, p: TriggerInputParams) -> dict[str, Any]:
+    if p.keys:
+        return {k: ctx.workflow_inputs[k] for k in p.keys if k in ctx.workflow_inputs}
+    return dict(ctx.workflow_inputs)
+
+
+def handler_crewai(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = CrewAIParams.model_validate(params)
+    return _run_crewai_single_task(ctx, p)
+
+
+def handler_reddit(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = RedditSourceParams.model_validate(params)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    subs = render_template(p.subreddits_template, template_ctx)
+    raw = _invoke_tool_like(reddit_top_signals, {"subreddits": subs, "limit": p.limit})
+    text = raw if isinstance(raw, str) else str(raw)
+    return {"text": text, "subreddits": subs}
+
+
+def handler_serper(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = SerperSourceParams.model_validate(params)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    q = render_template(p.query_template, template_ctx)
+
+    try:
+        from crewai_tools import SerperDevTool
+    except Exception as e:
+        raise RuntimeError("Serper Dev tool unavailable.") from e
+
+    tool = SerperDevTool()
+    raw = _invoke_tool_like(tool, {"search_query": q})
+    text = json.dumps(raw, default=str) if not isinstance(raw, str) else raw
+    return {"text": text, "query": q}
+
+
+def handler_scrape(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = ScrapeURLParams.model_validate(params)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    url = render_template(p.url_template, template_ctx)
+
+    try:
+        from crewai_tools import ScrapeWebsiteTool
+    except Exception as e:
+        raise RuntimeError("Scrape website tool unavailable.") from e
+
+    tool = ScrapeWebsiteTool()
+    raw = _invoke_tool_like(tool, {"website_url": url})
+    text = raw if isinstance(raw, str) else str(raw)
+    return {"text": text, "url": url}
+
+
+def handler_memory_query(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = MemoryQueryParams.model_validate(params)
+    if ctx.memory_collection is None:
+        raise RuntimeError("Chroma memory collection is not configured for this run.")
+    k = p.top_k or int(ctx.workflow_inputs.get("top_k_memory", 5))
+    k = max(1, min(k, 40))
+    tool = build_memory_query_tool(ctx.memory_collection, k)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    q = render_template(p.query_template, template_ctx)
+    raw = _invoke_tool_like(tool, {"topic_and_hook": q})
+    text = raw if isinstance(raw, str) else str(raw)
+    return {"text": text, "query": q, "top_k": k}
+
+
+def handler_memory_write(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = MemoryWriteParams.model_validate(params)
+    if ctx.memory_collection is None:
+        raise RuntimeError("Chroma memory collection is not configured for this run.")
+    tpl = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    topic = render_template(p.topic_template, tpl)
+    hook = render_template(p.hook_template, tpl)
+    platform = render_template(p.platform_template, tpl)
+    angle = render_template(p.angle_template, tpl)
+    ps_raw = render_template(p.predicted_score_template, tpl)
+    try:
+        predicted_score = int(float(ps_raw))
+    except ValueError:
+        predicted_score = 50
+    content_id_raw = (
+        render_template(p.content_id_template, tpl) if p.content_id_template else None
+    )
+    cid = content_id_raw.strip() if content_id_raw else str(uuid.uuid4())
+
+    mw = build_memory_write_tool(ctx.memory_collection, {"run_id": ctx.run_id})
+    msg = _invoke_tool_like(
+        mw,
+        {
+            "content_id": cid,
+            "topic": topic,
+            "hook": hook,
+            "platform": platform,
+            "angle": angle,
+            "predicted_score": predicted_score,
+        },
+    )
+    msg_s = msg if isinstance(msg, str) else str(msg)
+    return {
+        "message": msg_s,
+        "content_id": cid,
+        "topic": topic,
+        "hook": hook,
+        "platform": platform,
+        "angle": angle,
+        "predicted_score": predicted_score,
+    }
+
+
+def handler_transform_template(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = TransformTemplateParams.model_validate(params)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    out = render_template(p.template, template_ctx)
+    return {"text": out}
+
+
+def handler_output_pieces(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = OutputPiecesParams.model_validate(params)
+    bucket = ctx.completed_outputs
+    if p.include_node_metadata:
+        return {"nodes": dict(bucket)}
+    return {"chunks": list(bucket.values())}
+
+
+def handler_gemini_image(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = GeminiImageParams.model_validate(params)
+    return run_gemini_image_node(ctx, p)
+
+
+_REGISTRY: dict[str, tuple[dict[str, Any], Any]] = {
+    "trigger.input": (
+        TriggerInputParams.model_json_schema(),
+        lambda ctx, raw: handler_trigger_input(ctx, TriggerInputParams.model_validate(raw)),
+    ),
+    "agent.crewai": (CrewAIParams.model_json_schema(), lambda ctx, raw: handler_crewai(ctx, raw)),
+    "source.reddit": (RedditSourceParams.model_json_schema(), lambda ctx, raw: handler_reddit(ctx, raw)),
+    "source.serper": (SerperSourceParams.model_json_schema(), lambda ctx, raw: handler_serper(ctx, raw)),
+    "source.scrape_url": (ScrapeURLParams.model_json_schema(), lambda ctx, raw: handler_scrape(ctx, raw)),
+    "memory.query": (MemoryQueryParams.model_json_schema(), lambda ctx, raw: handler_memory_query(ctx, raw)),
+    "memory.write": (MemoryWriteParams.model_json_schema(), lambda ctx, raw: handler_memory_write(ctx, raw)),
+    "transform.template": (
+        TransformTemplateParams.model_json_schema(),
+        lambda ctx, raw: handler_transform_template(ctx, raw),
+    ),
+    "output.pieces": (
+        OutputPiecesParams.model_json_schema(),
+        lambda ctx, raw: handler_output_pieces(ctx, raw),
+    ),
+    "media.gemini_image": (
+        GeminiImageParams.model_json_schema(),
+        lambda ctx, raw: handler_gemini_image(ctx, raw),
+    ),
+}
+
+
+def run_handler(node_type: str, ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    if node_type not in _REGISTRY:
+        raise ValueError(f"Unknown node type: {node_type}")
+    _, fn = _REGISTRY[node_type]
+    return fn(ctx, params)
+
+
+def schemas_by_type() -> dict[str, dict[str, Any]]:
+    return {k: v[0] for k, v in _REGISTRY.items()}

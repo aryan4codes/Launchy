@@ -1,0 +1,115 @@
+{
+  "id": "avcm_classic",
+  "name": "AVCM-stage linear DAG",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {},
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ subreddits | default('Entrepreneur,SaaS,technology') }}",
+        "limit": 12
+      },
+      "position": { "x": 0, "y": 90 }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": {
+        "query_template": "{{ niche }} problems and trends"
+      },
+      "position": { "x": 0, "y": 180 }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "data": {
+        "template": "Niche: {{ niche }} | platforms: {{ platforms | default('twitter,linkedin') }}\nReddit highlights:\n{{ upstream['reddit']['text'] }}\nSerper summaries:\n{{ upstream['serper']['text'] }}"
+      },
+      "position": { "x": 220, "y": 120 }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Audience Psychologist",
+        "goal": "Map emotional triggers and objections grounded in signals.",
+        "backstory": "Infer only from the supplied signal block.",
+        "task_description_template": "{{ upstream['merge_signals']['text'] }}",
+        "expected_output": "Short bullet memo: triggers | objections | language hooks per sub-theme."
+      },
+      "position": { "x": 420, "y": 0 }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Content Strategist",
+        "goal": "Turn psychology into differentiated angles.",
+        "backstory": "Align angles with niche relevance only.",
+        "task_description_template": "Psych memo:\n{{ upstream['psych']['text'] }}",
+        "expected_output": "Numbered angles with suggested platform emphasis."
+      },
+      "position": { "x": 640, "y": 0 }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Copywriter",
+        "goal": "Draft native social copy snippets per angle.",
+        "backstory": "Keep hooks truthful to inputs.",
+        "task_description_template": "Angles brief:\n{{ upstream['angles']['text'] }}",
+        "expected_output": "Grouped draft lines per angle (~2 variations each)."
+      },
+      "position": { "x": 860, "y": 0 }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Creative Director",
+        "goal": "Add concise visual/format notes to each draft snippet.",
+        "backstory": "Suggest carousel/reel/static cues without hallucinating logos.",
+        "task_description_template": "Draft copy pack:\n{{ upstream['copy']['text'] }}",
+        "expected_output": "Annotated creative brief snippets."
+      },
+      "position": { "x": 1080, "y": 0 }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Performance Analyst",
+        "goal": "Rough score each snippet 0–100 plus one-line rationale (no tooling).",
+        "backstory": "Calibrated heuristics for hook sharpness only.",
+        "task_description_template": "Creative snippets with briefs:\n{{ upstream['creative_brief']['text'] }}",
+        "expected_output": "Table-like rankings with score and rationale per snippet."
+      },
+      "position": { "x": 1300, "y": 0 }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": { "x": 1520, "y": 0 }
+    }
+  ],
+  "edges": [
+    { "source": "in", "target": "reddit" },
+    { "source": "in", "target": "serper" },
+    { "source": "reddit", "target": "merge_signals" },
+    { "source": "serper", "target": "merge_signals" },
+    { "source": "merge_signals", "target": "psych" },
+    { "source": "psych", "target": "angles" },
+    { "source": "angles", "target": "copy" },
+    { "source": "copy", "target": "creative_brief" },
+    { "source": "creative_brief", "target": "score" },
+    { "source": "score", "target": "out" }
+  ]
+}

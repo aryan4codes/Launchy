@@ -1,0 +1,14 @@
+{
+  "node_id": "out",
+  "type": "output.pieces",
+  "error": null,
+  "output": {
+    "nodes": {
+      "in": {},
+      "tweet": {
+        "raw": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth",
+        "text": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth"
+      }
+    }
+  }
+}

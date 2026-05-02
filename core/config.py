@@ -27,6 +27,7 @@ class ContentPiece(BaseModel):
     predicted_score: int = Field(ge=0, le=100)
     score_reasoning: str
     recommended: bool = False
+    image_path: str | None = None
 
 
 class RunSummary(BaseModel):

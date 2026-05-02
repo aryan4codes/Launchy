@@ -1,0 +1,33 @@
+{
+  "id": "d681a7d6-cc76-46be-9224-6e554f15447b",
+  "name": "Untitled workflow",
+  "nodes": [
+    {
+      "id": "n-62f2dd8b",
+      "type": "trigger.input",
+      "params": {},
+      "position": {
+        "x": 26.25,
+        "y": 86.875
+      }
+    },
+    {
+      "id": "n-978563d4",
+      "type": "source.reddit",
+      "params": {},
+      "position": {
+        "x": 309.875,
+        "y": -7.125000000000014
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "reactflow__edge-n-62f2dd8b-n-978563d4",
+      "source": "n-62f2dd8b",
+      "target": "n-978563d4",
+      "sourceHandle": null,
+      "targetHandle": null
+    }
+  ]
+}

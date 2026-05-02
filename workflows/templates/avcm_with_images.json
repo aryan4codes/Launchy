@@ -1,0 +1,40 @@
+{
+  "id": "avcm_with_images",
+  "name": "Niche brief to hero image",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {},
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "brief",
+      "type": "transform.template",
+      "data": {
+        "template": "Brand-safe hero image concept for the niche '{{ niche }}'. Focus on optimism, teamwork, abstract UI motifs, cinematic lighting."
+      },
+      "position": { "x": 260, "y": 0 }
+    },
+    {
+      "id": "vis",
+      "type": "media.gemini_image",
+      "data": {
+        "prompt_template": "Illustration, high detail PNG style: {{ upstream['brief']['text'] }}",
+        "model": "gemini-2.5-flash-image"
+      },
+      "position": { "x": 520, "y": 0 }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": { "x": 780, "y": 0 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "in", "target": "brief", "sourceHandle": null, "targetHandle": null },
+    { "id": "e2", "source": "brief", "target": "vis", "sourceHandle": null, "targetHandle": null },
+    { "id": "e3", "source": "vis", "target": "out", "sourceHandle": null, "targetHandle": null }
+  ]
+}

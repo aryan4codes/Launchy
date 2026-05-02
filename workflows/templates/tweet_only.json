@@ -1,0 +1,34 @@
+{
+  "id": "tweet_only",
+  "name": "Tweet-only agent",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {},
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "tweet",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Senior Social Copywriter",
+        "goal": "Write punchy tweets that fit the niche and platform tone.",
+        "backstory": "You write only from user inputs without inventing factual claims.",
+        "task_description_template": "Niche: {{ niche }}\nPlatforms: {{ platforms | default('twitter') }}\nDraft exactly one standalone tweet under 280 characters with a gripping hook.",
+        "expected_output": "The tweet body only, no preamble."
+      },
+      "position": { "x": 280, "y": 0 }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": { "x": 560, "y": 0 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "in", "target": "tweet", "sourceHandle": null, "targetHandle": null },
+    { "id": "e2", "source": "tweet", "target": "out", "sourceHandle": null, "targetHandle": null }
+  ]
+}

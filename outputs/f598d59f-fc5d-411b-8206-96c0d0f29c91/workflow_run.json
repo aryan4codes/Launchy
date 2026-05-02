@@ -1,0 +1,92 @@
+{
+  "run_id": "f598d59f-fc5d-411b-8206-96c0d0f29c91",
+  "status": "completed",
+  "workflow": {
+    "id": "c85e1f44-bbb4-4963-b996-5232923c5fae",
+    "name": "tweet_only-copy",
+    "nodes": [
+      {
+        "id": "in",
+        "type": "trigger.input",
+        "data": {
+          "keys": [
+            "YCombinator"
+          ]
+        },
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "tweet",
+        "type": "agent.crewai",
+        "data": {
+          "role": "Senior Social Copywriter",
+          "goal": "Write punchy tweets that fit the niche and platform tone.",
+          "backstory": "You write only from user inputs without inventing factual claims.",
+          "task_description_template": "Niche: {{ niche }}\nPlatforms: {{ platforms | default('twitter') }}\nDraft exactly one standalone tweet under 280 characters with a gripping hook.",
+          "expected_output": "The tweet body only, no preamble."
+        },
+        "position": {
+          "x": 280.0,
+          "y": 0.0
+        }
+      },
+      {
+        "id": "out",
+        "type": "output.pieces",
+        "data": {},
+        "position": {
+          "x": 560.0,
+          "y": 0.0
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "in",
+        "target": "tweet",
+        "sourceHandle": null,
+        "targetHandle": null
+      },
+      {
+        "id": "e2",
+        "source": "tweet",
+        "target": "out",
+        "sourceHandle": null,
+        "targetHandle": null
+      }
+    ]
+  },
+  "inputs": {
+    "niche": "general"
+  },
+  "node_outputs": {
+    "in": {},
+    "tweet": {
+      "raw": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth",
+      "text": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth"
+    },
+    "out": {
+      "nodes": {
+        "in": {},
+        "tweet": {
+          "raw": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth",
+          "text": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth"
+        }
+      }
+    }
+  },
+  "final_output": {
+    "nodes": {
+      "in": {},
+      "tweet": {
+        "raw": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth",
+        "text": "Ever wonder what\u2019s lurking just outside your comfort zone? The magic happens when you step into the unknown. Dare to explore. #Motivation #Growth"
+      }
+    }
+  },
+  "error": null
+}

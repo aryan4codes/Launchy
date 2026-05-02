@@ -12,7 +12,8 @@
 - **`core/`** holds `RunConfig` / `RunResult` and `PipelineController`. No CrewAI imports there.
 - **`agents/`** wires CrewAI via `crew_adapter.py` + YAML.
 - **`tools/`** CrewAI tools + Chroma helpers.
-- **`cli/`** and **`api/`** are thin shims over `PipelineController`.
+- **`cli/`** and **`api/`** are thin shims over `PipelineController` plus workflow HTTP routes.
+- **`workflow/`** — DAG specs, node handlers, and `WorkflowEngine` (see `workflow/AGENTS.md`).
 
 ## External MCP servers (Cursor)
 

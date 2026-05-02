@@ -1,0 +1,8 @@
+{
+  "node_id": "in",
+  "type": "trigger.input",
+  "error": null,
+  "output": {
+    "niche": "general"
+  }
+}

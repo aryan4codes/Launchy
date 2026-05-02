@@ -1,0 +1,205 @@
+{
+  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
+  "name": "avcm_classic-copy",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "params": {},
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "params": {
+        "subreddits_template": "{{ subreddits | default('Entrepreneur,SaaS,technology') }}",
+        "limit": 12
+      },
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "params": {
+        "query_template": "{{ niche }} problems and trends"
+      },
+      "position": {
+        "x": 0.0,
+        "y": 180.0
+      }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "params": {
+        "template": "Niche: {{ niche }} | platforms: {{ platforms | default('twitter,linkedin') }}\nReddit highlights:\n{{ upstream['reddit']['text'] }}\nSerper summaries:\n{{ upstream['serper']['text'] }}"
+      },
+      "position": {
+        "x": 220.0,
+        "y": 120.0
+      }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Audience Psychologist",
+        "goal": "Map emotional triggers and objections grounded in signals.",
+        "backstory": "Infer only from the supplied signal block.",
+        "task_description_template": "{{ upstream['merge_signals']['text'] }}",
+        "expected_output": "Short bullet memo: triggers | objections | language hooks per sub-theme."
+      },
+      "position": {
+        "x": 420.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Content Strategist",
+        "goal": "Turn psychology into differentiated angles.",
+        "backstory": "Align angles with niche relevance only.",
+        "task_description_template": "Psych memo:\n{{ upstream['psych']['text'] }}",
+        "expected_output": "Numbered angles with suggested platform emphasis."
+      },
+      "position": {
+        "x": 640.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Copywriter",
+        "goal": "Draft native social copy snippets per angle.",
+        "backstory": "Keep hooks truthful to inputs.",
+        "task_description_template": "Angles brief:\n{{ upstream['angles']['text'] }}",
+        "expected_output": "Grouped draft lines per angle (~2 variations each)."
+      },
+      "position": {
+        "x": 860.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Creative Director",
+        "goal": "Add concise visual/format notes to each draft snippet.",
+        "backstory": "Suggest carousel/reel/static cues without hallucinating logos.",
+        "task_description_template": "Draft copy pack:\n{{ upstream['copy']['text'] }}",
+        "expected_output": "Annotated creative brief snippets."
+      },
+      "position": {
+        "x": 1080.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Performance Analyst",
+        "goal": "Rough score each snippet 0–100 plus one-line rationale (no tooling).",
+        "backstory": "Calibrated heuristics for hook sharpness only.",
+        "task_description_template": "Creative snippets with briefs:\n{{ upstream['creative_brief']['text'] }}",
+        "expected_output": "Table-like rankings with score and rationale per snippet."
+      },
+      "position": {
+        "x": 1300.0,
+        "y": 0.0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "params": {},
+      "position": {
+        "x": 1520.0,
+        "y": 0.0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "in-reddit-0",
+      "source": "in",
+      "target": "reddit",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "in-serper-1",
+      "source": "in",
+      "target": "serper",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "reddit-merge_signals-2",
+      "source": "reddit",
+      "target": "merge_signals",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "serper-merge_signals-3",
+      "source": "serper",
+      "target": "merge_signals",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "merge_signals-psych-4",
+      "source": "merge_signals",
+      "target": "psych",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "psych-angles-5",
+      "source": "psych",
+      "target": "angles",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "angles-copy-6",
+      "source": "angles",
+      "target": "copy",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "copy-creative_brief-7",
+      "source": "copy",
+      "target": "creative_brief",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "creative_brief-score-8",
+      "source": "creative_brief",
+      "target": "score",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "score-out-9",
+      "source": "score",
+      "target": "out",
+      "sourceHandle": null,
+      "targetHandle": null
+    }
+  ]
+}

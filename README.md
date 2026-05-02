@@ -16,6 +16,7 @@ AVCM is designed for rapid experimentation, extensibility, and production readin
 
 Optional:
 
+- **`GOOGLE_API_KEY`** — `media.gemini_image` workflow node (Imagen / Gemini image)
 - **`CHROMA_PERSIST_DIR`** — overrides `./memory/performance_db`
 - **`APIFY_API_TOKEN`** + `uv sync --extra instagram` — reserved for future Instagram actor wiring
 
@@ -54,6 +55,15 @@ uv run avcm serve --port 8000
 - **`GET /runs/{run_id}/pieces`** — JSON array of content pieces only
 - **`POST /memory/ingest`** — multipart CSV upload (same columns as CLI ingest)
 - **`GET /health`**
+- **Workflow canvas**
+  - **`GET /workflows/node-types`** — JSON Schema per handler kind (`trigger.input`, `media.gemini_image`, …)
+  - **`GET /workflows`**, **`POST /workflows`**, **`GET|PUT|DELETE /workflows/{id}`** — saved graphs under **`workflows/stored/`**
+  - **`GET /workflows/templates`**, **`GET /workflows/templates/{id}`**, **`POST /workflows/clone-template`**
+  - **`POST /workflow-runs`** — body `{ "workflow_id": "<stored-uuid>", "inputs": { … } }` or inline `"workflow": { … }`; artifacts **`outputs/<run_id>/`** (`workflow_run.json`, **`nodes/`**, **`events.jsonl`**)
+  - **`GET /workflow-runs/{run_id}`** — latest meta snapshot
+  - **WebSocket** **`/workflow-runs/{run_id}/ws`** — streams JSON lines from **`events.jsonl`**; terminal **`{ "type": "sync", … }`** when status is **completed** / **failed**
+  - **`GET /artifacts/{path}`** — static files under **`outputs/`** (PNG previews for Gemini nodes use relative keys like **`{run_id}/images/...`**)
+- **Static UI**: build **`cd web && npm run build`**, then open **`http://127.0.0.1:8000/app/`** while **`uv run avcm serve`** runs. Local UI dev: **`cd web && npm run dev`** (port 5173 proxies to the API on 8000).
 
 Example:
 
@@ -73,7 +83,7 @@ curl -s -X POST http://127.0.0.1:8000/runs/ \
 
 ```bash
 uv run pytest
-uv run ruff check core agents tools memory api cli tests evals
+uv run ruff check core agents tools memory api cli workflow tests evals
 ```
 
 ## Governance

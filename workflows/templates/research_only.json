@@ -1,0 +1,39 @@
+{
+  "id": "research_only",
+  "name": "Research only",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {},
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ subreddits | default('AskReddit,technology,SaaS') }}",
+        "limit": 12
+      },
+      "position": { "x": 220, "y": -40 }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": { "query_template": "{{ niche }} trends and discussions" },
+      "position": { "x": 220, "y": 80 }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": { "x": 460, "y": 20 }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "in", "target": "reddit", "sourceHandle": null, "targetHandle": null },
+    { "id": "e2", "source": "in", "target": "serper", "sourceHandle": null, "targetHandle": null },
+    { "id": "e3", "source": "reddit", "target": "out", "sourceHandle": null, "targetHandle": null },
+    { "id": "e4", "source": "serper", "target": "out", "sourceHandle": null, "targetHandle": null }
+  ]
+}

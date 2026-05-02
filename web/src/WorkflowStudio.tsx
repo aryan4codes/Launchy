@@ -201,7 +201,7 @@ function FlowCanvasDnD({
       <Background gap={28} />
       <MiniMap
         nodeStrokeWidth={3}
-        className="!rounded-lg !border !border-white/15 !bg-zinc-950/90 [&_.react-flow__minimap-mask]:opacity-95"
+        className="!rounded-lg !border !border-border !bg-card/95 !shadow-md dark:!border-white/15 dark:!bg-zinc-950/90 [&_.react-flow__minimap-mask]:opacity-95"
         zoomable
       />
       <Controls />
@@ -422,7 +422,7 @@ export default function WorkflowStudio() {
   const nodeTypesById = useMemo(() => Object.fromEntries(nodes.map((n) => [n.id, (n.data as WorkflowNodeData).wfType])), [nodes])
 
   return (
-    <div className="flex h-screen flex-col bg-background selection:bg-emerald-500/30 selection:text-emerald-100">
+    <div className="flex h-screen flex-col bg-background selection:bg-primary/25 selection:text-foreground dark:selection:bg-emerald-500/30 dark:selection:text-emerald-50">
       <WorkflowTopBar
         name={name}
         busy={busy}

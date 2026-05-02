@@ -17,7 +17,7 @@ function NodeDot({ status }: { status: NonNullable<NodeRunUi['status']> | 'idle'
   if (status === 'running') return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sky-400" />
   if (status === 'done') return <Circle className="h-4 w-4 shrink-0 fill-emerald-500 text-emerald-500" />
   if (status === 'failed') return <Circle className="h-4 w-4 shrink-0 fill-red-500 text-red-500" />
-  return <Circle className="h-4 w-4 shrink-0 text-zinc-600" />
+  return <Circle className="h-4 w-4 shrink-0 text-muted-foreground/70" />
 }
 
 export function RunDrawer({
@@ -82,7 +82,7 @@ export function RunDrawer({
           {!busy && meta.runId && (meta.status === 'completed' || meta.status === 'failed') ? (
             <Link
               to={`results/${encodeURIComponent(meta.runId)}`}
-              className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-emerald-600/50 bg-emerald-950/50 px-3 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-900/70"
+              className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-emerald-600/40 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-100 dark:border-emerald-600/50 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/70"
             >
               Show results
             </Link>
@@ -148,9 +148,15 @@ export function RunDrawer({
                         key={nid}
                         className={cn(
                           'flex items-center gap-2 rounded-md border px-2 py-1.5',
-                          st === 'running' ? 'border-sky-500/40 bg-sky-950/40' : 'border-border bg-card/30',
-                          st === 'failed' ? 'border-red-500/30 bg-red-950/25' : null,
-                          st === 'done' ? 'border-emerald-500/20 bg-emerald-950/20' : null,
+                          st === 'running'
+                            ? 'border-sky-500/35 bg-sky-50 dark:border-sky-500/40 dark:bg-sky-950/40'
+                            : 'border-border bg-card/30',
+                          st === 'failed'
+                            ? 'border-red-400/35 bg-red-50 dark:border-red-500/30 dark:bg-red-950/25'
+                            : null,
+                          st === 'done'
+                            ? 'border-emerald-500/35 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-950/20'
+                            : null,
                         )}
                       >
                         <NodeDot status={st} />
@@ -173,7 +179,7 @@ export function RunDrawer({
                 {inputsSlot}
               </div>
             ) : (
-              <pre className="scrollbar-thin flex-1 overflow-auto p-3 text-[10px] leading-relaxed text-zinc-400">
+              <pre className="scrollbar-thin flex-1 overflow-auto p-3 text-[10px] leading-relaxed text-muted-foreground">
                 {runLogText.trim() ? runLogText : 'Listening for websocket events…'}
               </pre>
             )}
@@ -190,10 +196,10 @@ export function RunDrawer({
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-[11px] text-muted-foreground">No Gemini images detected in output.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">No image outputs detected in payload.</p>
             )}
             <Separator className="my-3 opacity-50" />
-            <pre className="max-h-40 overflow-auto rounded-lg border border-border bg-background p-2 font-mono text-[10px] text-zinc-300">
+            <pre className="max-h-40 overflow-auto rounded-lg border border-border bg-background p-2 font-mono text-[10px] text-foreground/90">
               {(() => {
                 try {
                   return JSON.stringify(runPayload ?? null, null, 2).slice(0, 9000)

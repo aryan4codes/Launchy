@@ -71,7 +71,7 @@ export const WorkflowNodeInner = memo(({ id, data, selected }: NodeProps<Workflo
         <Handle
           type="target"
           position={Position.Left}
-          className="!h-3 !w-3 !border !border-zinc-600 !bg-zinc-900"
+          className="!h-3 !w-3 !border !border-border !bg-muted dark:!border-muted-foreground/50 dark:!bg-muted-foreground/20"
         />
 
         <div className="relative flex items-start justify-between gap-2">
@@ -101,7 +101,7 @@ export const WorkflowNodeInner = memo(({ id, data, selected }: NodeProps<Workflo
         {previewParts.length ? (
           <div className="relative mt-2 space-y-0.5 border-t border-border/60 pt-2">
             {previewParts.map((line) => (
-              <div key={line} className="truncate font-mono text-[10px] text-zinc-400" title={line}>
+              <div key={line} className="truncate font-mono text-[10px] text-muted-foreground" title={line}>
                 {line}
               </div>
             ))}
@@ -122,7 +122,7 @@ export const WorkflowNodeInner = memo(({ id, data, selected }: NodeProps<Workflo
         <Handle
           type="source"
           position={Position.Right}
-          className="!h-3 !w-3 !border !border-zinc-600 !bg-zinc-900"
+          className="!h-3 !w-3 !border !border-border !bg-muted dark:!border-muted-foreground/50 dark:!bg-muted-foreground/20"
         />
       </div>
     </div>

@@ -138,7 +138,7 @@ export function WorkflowInspector({
           </Button>
           <details className="mt-4 rounded-lg border border-border bg-card/40 p-2">
             <summary className={cn('cursor-pointer text-[11px] font-medium text-muted-foreground')}>API schema</summary>
-            <pre className="mt-2 max-h-48 overflow-auto text-[10px] text-zinc-400">
+            <pre className="mt-2 max-h-48 overflow-auto text-[10px] text-muted-foreground">
               {JSON.stringify(schemaForType ?? {}, null, 2)}
             </pre>
           </details>
@@ -148,7 +148,7 @@ export function WorkflowInspector({
           {nodeOutPreview === undefined ? (
             <p className="text-xs text-muted-foreground">Run the workflow to see this node&apos;s stored output.</p>
           ) : (
-            <pre className="whitespace-pre-wrap break-words rounded-lg border border-border bg-background p-2 font-mono text-[10px] leading-relaxed text-zinc-300">
+            <pre className="whitespace-pre-wrap break-words rounded-lg border border-border bg-background p-2 font-mono text-[10px] leading-relaxed text-foreground/90">
               {previewJson(nodeOutPreview)}
             </pre>
           )}

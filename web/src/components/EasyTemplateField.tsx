@@ -27,7 +27,7 @@ function GeneratedSnippet({ value }: { value: string }) {
   return (
     <details className="rounded-md border border-border/80 bg-muted/20 px-2 py-1.5 text-[10px] text-muted-foreground">
       <summary className="cursor-pointer select-none font-medium text-foreground/80">Saved value (auto-built)</summary>
-      <code className="mt-1 block whitespace-pre-wrap break-all font-mono text-[10px] text-emerald-400/90">{value || '—'}</code>
+      <code className="mt-1 block whitespace-pre-wrap break-all font-mono text-[10px] text-emerald-800 dark:text-emerald-400/90">{value || '—'}</code>
     </details>
   )
 }

@@ -4,6 +4,29 @@
 
 @layer base {
   :root {
+    --background: 60 30% 98.5%;
+    --foreground: 240 14% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 14% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 14% 10%;
+    --primary: 142 71% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 14% 92%;
+    --secondary-foreground: 240 14% 12%;
+    --muted: 150 12% 94%;
+    --muted-foreground: 240 5% 42%;
+    --accent: 150 12% 91%;
+    --accent-foreground: 240 14% 12%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 10% 86%;
+    --input: 150 10% 86%;
+    --ring: 142 71% 35%;
+    color-scheme: light;
+  }
+
+  .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 6% 10%;
@@ -20,9 +43,10 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
     --ring: 142 76% 36%;
+    color-scheme: dark;
   }
 
   body {
@@ -50,9 +74,73 @@ body,
   }
 }
 
-/* Stylized dotted canvas */
+/* Stylized dotted canvas — light + dark */
 .studio-flow .react-flow__pane {
-  background-color: hsl(240 12% 5%) !important;
-  background-image: radial-gradient(circle at 1px 1px, hsl(142 76% 36% / 0.12) 1px, transparent 0) !important;
+  background-color: hsl(145 35% 96%) !important;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    hsl(142 55% 38% / 0.09) 1px,
+    transparent 0
+  ) !important;
   background-size: 22px 22px !important;
+}
+
+/* ── Markdown prose for results page ── */
+.prose-result {
+  @apply text-[15px] leading-relaxed text-foreground;
+}
+.prose-result h1 {
+  @apply mt-6 mb-3 text-xl font-bold tracking-tight text-foreground;
+}
+.prose-result h2 {
+  @apply mt-5 mb-2 text-lg font-semibold tracking-tight text-foreground;
+}
+.prose-result h3 {
+  @apply mt-4 mb-2 text-base font-semibold text-foreground;
+}
+.prose-result h4 {
+  @apply mt-3 mb-1 text-sm font-semibold text-foreground;
+}
+.prose-result p {
+  @apply my-2;
+}
+.prose-result ul {
+  @apply my-2 ml-1 list-none space-y-1.5;
+}
+.prose-result ol {
+  @apply my-2 ml-1 list-none space-y-3;
+}
+.prose-result ol > li {
+  @apply relative;
+}
+.prose-result ul > li {
+  @apply relative pl-4;
+}
+.prose-result ul > li::before {
+  content: "•";
+  @apply absolute left-0 text-muted-foreground;
+}
+.prose-result strong {
+  @apply font-semibold text-foreground;
+}
+.prose-result em {
+  @apply text-muted-foreground italic;
+}
+.prose-result code {
+  @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[13px] text-foreground;
+}
+.prose-result blockquote {
+  @apply my-3 border-l-[3px] border-primary/40 pl-4 italic text-muted-foreground;
+}
+.prose-result hr {
+  @apply my-4 border-border/60;
+}
+
+.dark .studio-flow .react-flow__pane {
+  background-color: hsl(240 12% 5%) !important;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    hsl(142 76% 36% / 0.12) 1px,
+    transparent 0
+  ) !important;
 }

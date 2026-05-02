@@ -10,11 +10,12 @@ import {
   usePopover,
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { templateMeta } from '@/lib/nodeCatalog'
 import { cn } from '@/lib/utils'
 
 const outlineBtn =
-  'inline-flex h-9 items-center gap-2 rounded-md border border-zinc-700 bg-transparent px-3 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-900 disabled:pointer-events-none disabled:opacity-50'
+  'inline-flex h-9 items-center gap-2 rounded-md border border-border bg-transparent px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50'
 
 function TemplatesMenuBtn({
   busy,
@@ -174,6 +175,8 @@ export function WorkflowTopBar({
 
       <Separator orientation="vertical" className="hidden h-8 sm:block opacity-60" />
 
+      <ThemeToggle />
+
       <div className="flex min-w-[120px] max-w-[220px] flex-1 flex-col gap-0.5">
         <label htmlFor="wf-name" className="sr-only">
           Workflow name
@@ -201,7 +204,7 @@ export function WorkflowTopBar({
         size="sm"
         disabled={busy || !canRun}
         title={!canRun ? 'Add at least one block to run this workflow' : undefined}
-        className="gap-2 shadow-lg shadow-emerald-950/40 sm:ml-auto sm:shadow-none"
+        className="gap-2 shadow-lg shadow-primary/25 dark:shadow-emerald-950/40 sm:ml-auto sm:shadow-none"
         type="button"
         onClick={() => void onRun()}
       >

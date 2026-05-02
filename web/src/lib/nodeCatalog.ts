@@ -97,7 +97,7 @@ export const CATEGORY_META: Record<
     label: "Outputs",
     tint: "from-zinc-400/20 to-zinc-400/5",
     ring: "ring-zinc-400/40",
-    chip: "bg-zinc-400/15 text-zinc-200 border-zinc-400/30",
+    chip: "bg-muted text-muted-foreground border-border dark:bg-zinc-400/15 dark:text-zinc-200 dark:border-zinc-400/30",
   },
 };
 

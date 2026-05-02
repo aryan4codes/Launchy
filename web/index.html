@@ -3,9 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AVCM Workflow Canvas</title>
+    <title>Launchy Studio</title>
+    <script>
+      (function () {
+        try {
+          var k = 'launchy-theme';
+          var t = localStorage.getItem(k);
+          var dark;
+          if (t === 'dark') dark = true;
+          else if (t === 'light') dark = false;
+          else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (_) {}
+      })();
+    </script>
   </head>
-  <body class="min-h-screen bg-zinc-950 text-zinc-100">
+  <body class="min-h-screen bg-background text-foreground">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

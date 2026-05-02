@@ -1,29 +1,21 @@
-import { ArrowLeft, ImageIcon } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 import { CopyTextButton } from "@/components/CopyTextButton";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { NodeOutputCard } from "@/components/results/NodeOutputCard";
+import { RunInputsCard } from "@/components/results/RunInputsCard";
+import { RawJsonDrawer } from "@/components/results/RawJsonDrawer";
 import { getWorkflowRun } from "@/lib/api";
 import {
-  extractRunSections,
+  extractNodeOutputs,
+  extractInputs,
   parseRunMeta,
 } from "@/lib/runPayloadDisplay";
 import { cn } from "@/lib/utils";
-
-function joinAllExportableTexts(
-  texts: { nodeLabel: string; field: string; body: string }[],
-  inputsJson: string,
-): string {
-  const chunks: string[] = [];
-  if (inputsJson.trim())
-    chunks.push(`## Inputs\n${inputsJson.trim()}`);
-  for (const t of texts) {
-    chunks.push(`## ${t.nodeLabel} (${t.field})\n\n${t.body}`);
-  }
-  return chunks.join("\n\n––––––––––––––––––––\n\n");
-}
 
 export default function ResultsPage() {
   const { runId = "" } = useParams<{ runId: string }>();
@@ -57,32 +49,31 @@ export default function ResultsPage() {
   }, [runId]);
 
   const meta = useMemo(() => parseRunMeta(payload), [payload]);
-  const { texts, images } = useMemo(() => extractRunSections(payload), [payload]);
+  const nodeBlocks = useMemo(() => extractNodeOutputs(payload), [payload]);
+  const inputs = useMemo(() => extractInputs(payload), [payload]);
 
-  const inputsJson = useMemo(() => {
-    if (!payload || typeof payload !== "object" || !("inputs" in payload)) return "";
-    try {
-      return JSON.stringify(
-        (payload as { inputs?: unknown }).inputs ?? {},
-        null,
-        2,
-      );
-    } catch {
-      return "";
-    }
-  }, [payload]);
-
-  const fullCopyDigest = useMemo(
-    () => joinAllExportableTexts(texts, inputsJson),
-    [texts, inputsJson],
-  );
+  const fullCopyDigest = useMemo(() => {
+    return nodeBlocks
+      .filter((b) => b.markdown)
+      .map((b) => `## ${b.nodeId}\n\n${b.markdown}`)
+      .join("\n\n---\n\n");
+  }, [nodeBlocks]);
 
   const status = meta.status ?? "unknown";
-  const statusTone =
+
+  const StatusIcon =
+    status === "completed" ? CheckCircle2 : status === "failed" ? XCircle : Clock;
+  const statusColor =
     status === "completed"
-      ? "border-emerald-500/35 bg-emerald-950/30 text-emerald-200"
+      ? "text-emerald-600 dark:text-emerald-400"
       : status === "failed"
-        ? "border-red-500/35 bg-red-950/35 text-red-200"
+        ? "text-red-600 dark:text-red-400"
+        : "text-muted-foreground";
+  const statusBadge =
+    status === "completed"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300"
+      : status === "failed"
+        ? "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/35 dark:text-red-300"
         : "border-border bg-muted/30 text-muted-foreground";
 
   if (loading) {
@@ -90,7 +81,12 @@ export default function ResultsPage() {
       <div className="min-h-full bg-background">
         <div className="mx-auto max-w-3xl px-4 py-12">
           <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-          <div className="mt-8 h-[220px] animate-pulse rounded-xl bg-muted/50" />
+          <div className="mt-3 h-4 w-32 animate-pulse rounded-md bg-muted/50" />
+          <div className="mt-8 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 animate-pulse rounded-xl bg-muted/40" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -114,173 +110,96 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-full bg-background pb-24">
+      {/* ── Header ── */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-start justify-between gap-4 px-4 py-4">
-          <div className="min-w-0">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0 flex-1">
             <Link
               to="/"
-              className="mb-2 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
               Studio
             </Link>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
               {meta.workflowName ? (
                 <>
-                  Results · <span className="text-muted-foreground">{meta.workflowName}</span>
+                  Results{" "}
+                  <span className="font-normal text-muted-foreground">· {meta.workflowName}</span>
                 </>
               ) : (
                 "Run results"
               )}
             </h1>
-            <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-              Run <span className="text-zinc-300">{meta.runId ?? runId}</span>
-            </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <Badge variant="outline" className={cn("text-[11px]", statusTone)}>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeToggle />
+            <Badge variant="outline" className={cn("gap-1.5 text-[11px]", statusBadge)}>
+              <StatusIcon className={cn("h-3 w-3", statusColor)} />
               {status}
             </Badge>
-            {fullCopyDigest.trim() ? (
-              <CopyTextButton text={fullCopyDigest} label="Copy all text" size="sm" variant="secondary" />
-            ) : null}
-            <CopyTextButton
-              text={(() => {
-                try {
-                  return JSON.stringify(payload, null, 2);
-                } catch {
-                  return String(payload);
-                }
-              })()}
-              label="Copy JSON"
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground"
-            />
+            {fullCopyDigest.trim() && (
+              <CopyTextButton text={fullCopyDigest} label="Copy all" size="sm" variant="secondary" />
+            )}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        {meta.error ? (
+      <main className="mx-auto max-w-4xl px-4 py-6">
+        {/* ── Run ID + quick meta ── */}
+        <div className="mb-6 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="font-mono">{meta.runId ?? runId}</span>
+          <span className="text-border">•</span>
+          <span>{nodeBlocks.length} output{nodeBlocks.length !== 1 ? "s" : ""}</span>
+        </div>
+
+        {/* ── Error banner ── */}
+        {meta.error && (
           <section
-            className="mb-8 rounded-xl border border-red-500/30 bg-red-950/25 px-4 py-3 text-sm text-red-200"
+            className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/25 dark:text-red-200"
             role="alert"
           >
             <span className="font-semibold">Error:</span> {meta.error}
           </section>
-        ) : null}
+        )}
 
-        {inputsJson.trim() ? (
-          <section className="mb-10 rounded-xl border border-border bg-card/40 p-4 shadow-sm backdrop-blur-sm">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Run inputs
-              </h2>
-              <CopyTextButton text={inputsJson} label="Copy" size="sm" />
-            </div>
-            <pre className="scrollbar-thin max-h-[200px] overflow-auto whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-zinc-200 selection:bg-emerald-500/30 selection:text-emerald-50">
-              {inputsJson}
-            </pre>
-          </section>
-        ) : null}
+        {/* ── Run inputs ── */}
+        {inputs && Object.keys(inputs).length > 0 && (
+          <div className="mb-6">
+            <RunInputsCard inputs={inputs} />
+          </div>
+        )}
 
-        {images.length > 0 ? (
-          <section className="mb-10">
-            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              <ImageIcon className="h-4 w-4 opacity-70" aria-hidden />
-              Generated images
-            </div>
-            <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2">
-              {images.map((im) => (
-                <figure
-                  key={`${im.path}-${im.nodeLabel}`}
-                  className="overflow-hidden rounded-2xl border border-border bg-zinc-900/80 shadow-xl"
-                >
-                  <a
-                    href={im.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block bg-[radial-gradient(ellipse_at_top,_#1a2e29_0%,_transparent_60%)] p-4"
-                  >
-                    <img
-                      src={im.href}
-                      alt=""
-                      className="mx-auto max-h-[min(56vh,480px)] w-auto max-w-full rounded-lg object-contain"
-                    />
-                  </a>
-                  <figcaption className="space-y-3 border-t border-border/80 bg-black/35 px-4 py-4">
-                    <p className="text-[11px] text-muted-foreground">
-                      Source block: <span className="font-medium text-foreground">{im.nodeLabel}</span>
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <CopyTextButton text={im.copyHref} label="Copy image URL" size="sm" />
-                      <CopyTextButton
-                        text={`![generated](${im.copyHref})`}
-                        label="Copy markdown"
-                        size="sm"
-                        variant="outline"
-                      />
-                    </div>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {texts.length > 0 ? (
-          <section>
-            <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              Copy-ready output
-            </h2>
-            <div className="space-y-6">
-              {texts.map((t, idx) => (
-                <article
-                  key={`${t.nodeLabel}-${t.field}-${idx}`}
-                  className="rounded-xl border border-border bg-card/35 p-4 shadow-sm backdrop-blur-sm"
-                >
-                  <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[13px] font-semibold text-foreground">{t.nodeLabel}</span>
-                      <span className="ml-2 rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {t.field}
-                      </span>
-                    </div>
-                    <CopyTextButton text={t.body} label="Copy" size="sm" />
-                  </div>
-                  <div className="rounded-lg bg-background/60 p-4 text-[15px] leading-relaxed tracking-tight text-zinc-100 selection:bg-emerald-500/30 selection:text-emerald-50">
-                    <pre className="whitespace-pre-wrap font-sans">{t.body}</pre>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {texts.length === 0 && images.length === 0 ? (
+        {/* ── Node output cards ── */}
+        {nodeBlocks.length > 0 ? (
+          <div className="space-y-4">
+            {nodeBlocks.map((block) => {
+              const isAgent = block.nodeType?.startsWith("agent.") ?? false;
+              const isOutput = block.nodeType?.startsWith("output.") ?? false;
+              return (
+                <NodeOutputCard
+                  key={block.nodeId}
+                  nodeId={block.nodeId}
+                  nodeType={block.nodeType}
+                  markdown={block.markdown}
+                  images={block.images}
+                  defaultExpanded={isAgent || isOutput}
+                />
+              );
+            })}
+          </div>
+        ) : (
           <p className="rounded-xl border border-dashed border-muted-foreground/25 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
-            No headline text or image paths were emitted in this run. Use{" "}
+            No outputs were emitted in this run. Use{" "}
             <span className="font-semibold text-foreground">Copy JSON</span> for the full artifact.
           </p>
-        ) : null}
+        )}
 
-        <Separator className="my-12 opacity-40" />
+        <Separator className="my-10 opacity-40" />
 
-        <details className="group rounded-xl border border-border/60 bg-muted/10">
-          <summary className="cursor-pointer px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground">
-            Technical · raw run JSON
-          </summary>
-          <pre className="scrollbar-thin max-h-[50vh] overflow-auto border-t border-border/60 p-4 font-mono text-[11px] leading-relaxed text-zinc-400">
-            {(() => {
-              try {
-                return JSON.stringify(payload, null, 2);
-              } catch {
-                return String(payload);
-              }
-            })()}
-          </pre>
-        </details>
+        {/* ── Raw JSON ── */}
+        <RawJsonDrawer payload={payload} />
       </main>
     </div>
   );

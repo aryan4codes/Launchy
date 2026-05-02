@@ -13,3 +13,6 @@ memory/performance_db/*
 !memory/performance_db/.gitkeep
 .pytest_cache/
 .cursor/workspace*
+
+
+/outputs

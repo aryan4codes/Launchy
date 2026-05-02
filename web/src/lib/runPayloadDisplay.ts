@@ -1,13 +1,16 @@
+import { apiUrl } from "@/lib/apiOrigin";
 import { getCatalogEntry } from "@/lib/nodeCatalog";
 
-/** Resolve `/artifacts/<path>` (works with dev proxy and same-origin APIs). */
+/** Resolve artifact URL — dev proxy (relative) vs production `VITE_API_ORIGIN` (absolute). */
 export function artifactUrl(path: string): string {
   const rel = path.replace(/^outputs\/?/, "").replace(/^\/+/, "");
-  return `/artifacts/${rel}`;
+  return apiUrl(`/artifacts/${rel}`);
 }
 
 function fullArtifactUrl(path: string): string {
-  return `${window.location.origin}${artifactUrl(path)}`;
+  const u = artifactUrl(path);
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  return `${window.location.origin}${u}`;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {

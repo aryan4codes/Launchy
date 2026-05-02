@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd web && npm ci",
+  "buildCommand": "cd web && npm run build",
+  "outputDirectory": "web/dist",
+  "build": {
+    "env": {
+      "VITE_API_ORIGIN": "https://lauchy.onrender.com"
+    }
+  }
+}

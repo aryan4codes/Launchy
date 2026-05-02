@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { EasyInspectorField } from '@/lib/nodeCatalog'
 import {
+  buildImagePrompt,
   buildRedditSubreddits,
   buildSearchQueryParts,
   buildUrlTemplate,
+  parseImagePrompt,
   parseRedditSubreddits,
   parseSearchQueryParts,
   parseUrlTemplate,
+  type ImagePromptSource,
 } from '@/lib/templateCodec'
 import { cn } from '@/lib/utils'
 
@@ -29,6 +32,70 @@ function GeneratedSnippet({ value }: { value: string }) {
       <summary className="cursor-pointer select-none font-medium text-foreground/80">Saved value (auto-built)</summary>
       <code className="mt-1 block whitespace-pre-wrap break-all font-mono text-[10px] text-emerald-800 dark:text-emerald-400/90">{value || '—'}</code>
     </details>
+  )
+}
+
+function ImagePromptEasy({
+  value,
+  onChange,
+  idPrefix,
+}: {
+  value: string
+  onChange: (s: string) => void
+  idPrefix: string
+}) {
+  const parsed = useMemo(() => parseImagePrompt(value), [value])
+  const introId = `${idPrefix}-img-intro`
+  const selectId = `${idPrefix}-img-src`
+
+  const apply = (nextIntro: string, source: ImagePromptSource) =>
+    onChange(buildImagePrompt({ intro: nextIntro.trimEnd(), source }))
+
+  return (
+    <div className="space-y-3">
+      <p className="text-[11px] leading-snug text-muted-foreground">
+        Write like you&apos;re briefing a designer. You don&apos;t need brackets or special syntax—we&apos;ll connect
+        your topic or Brief step below if you want extra wording pulled in automatically.
+      </p>
+      <div className="space-y-1">
+        <label className="text-[11px] font-medium text-muted-foreground" htmlFor={introId}>
+          Look & feel
+        </label>
+        <Textarea
+          id={introId}
+          spellCheck
+          rows={5}
+          className="resize-y bg-background text-sm leading-relaxed"
+          value={parsed.intro}
+          onChange={(e) => apply(e.target.value, parsed.source)}
+          placeholder='e.g. "Flat illustration, emerald and cream, SaaS dashboard hero shot, PNG style, optimistic lighting"'
+        />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[11px] font-medium text-muted-foreground" htmlFor={selectId}>
+          Pull extra wording from…
+        </label>
+        <select
+          id={selectId}
+          className={selectClass()}
+          value={parsed.source}
+          onChange={(e) => apply(parsed.intro, e.target.value as ImagePromptSource)}
+        >
+          <option value="plain">Nothing — use only what I wrote above</option>
+          <option value="topic">My Topic (first step)</option>
+          <option value="brief">My Brief step (canvas node id brief)</option>
+        </select>
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          Choose Topic for quick one-liners; Brief when an earlier Brief block already distilled the narrative.
+        </p>
+      </div>
+      {parsed.source === 'plain' && /\{\{/.test(value) ? (
+        <p className="rounded-md border border-border/60 bg-muted/20 px-2 py-1.5 text-[10px] leading-snug text-muted-foreground">
+          Custom wiring is preserved. If something looks off, pick a &quot;Pull extra wording&quot; option or edit the
+          text above.
+        </p>
+      ) : null}
+    </div>
   )
 }
 
@@ -467,5 +534,7 @@ export function EasyTemplateField({
   if (kind === "search_query_parts")
     return <SearchQueryEasy value={value} onChange={onChange} idPrefix={idPrefix} />
   if (kind === "url_or_input") return <UrlEasy value={value} onChange={onChange} idPrefix={idPrefix} />
+  if (kind === "image_generation_prompt")
+    return <ImagePromptEasy value={value} onChange={onChange} idPrefix={idPrefix} />
   return null
 }

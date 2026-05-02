@@ -1,24 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Launchy Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Launchy – AI Content Studio</title>
+    <meta name="description" content="Launchy is your AI-powered content studio. Research, ideation, and creative generation in one seamless workflow." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#111827" />
     <script>
+      // Improved: minimizes reflow, clear vars, comment, prefers dark by default
       (function () {
         try {
-          var k = 'launchy-theme';
-          var t = localStorage.getItem(k);
-          var dark;
-          if (t === 'dark') dark = true;
-          else if (t === 'light') dark = false;
-          else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.classList.toggle('dark', dark);
-        } catch (_) {}
+          const themeKey = 'launchy-theme';
+          let theme = localStorage.getItem(themeKey);
+          let darkMode;
+          if (theme === 'dark') {
+            darkMode = true;
+          } else if (theme === 'light') {
+            darkMode = false;
+          } else {
+            darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          }
+          if (darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          // ignore
+        }
       })();
     </script>
   </head>
-  <body class="min-h-screen bg-background text-foreground">
+  <body class="min-h-screen bg-background text-foreground antialiased">
+    <noscript>
+      <div style="padding:2rem;text-align:center;color:#b91c1c;background:#ffe4e6;">
+        Launchy requires JavaScript to run. Please enable JavaScript in your browser.
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

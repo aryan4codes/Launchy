@@ -11,9 +11,7 @@ import { useEffect, useMemo, useState, type Key } from "react";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { NodeOutputCard } from "@/components/results/NodeOutputCard";
-import { RawJsonDrawer } from "@/components/results/RawJsonDrawer";
 import { ResultsPipelineStrip } from "@/components/results/ResultsPipelineStrip";
 import { getWorkflowRun } from "@/lib/api";
 import {
@@ -422,15 +420,10 @@ export default function ResultsPage() {
 
         {!showDashboard && nodeBlocks.length === 0 ? (
           <p className="rounded-xl border border-dashed border-muted-foreground/25 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
-            No outputs were surfaced for this layout. Expand{" "}
-            <span className="font-semibold text-foreground">Technical</span> below for raw JSON,
-            or re-run after nodes finish emitting text.
+            No outputs were surfaced for this layout. Re-run after steps finish emitting text, or expand the cards above
+            if any are collapsed.
           </p>
         ) : null}
-
-        <Separator className="opacity-40" />
-
-        <RawJsonDrawer payload={payload} />
       </main>
     </div>
   );

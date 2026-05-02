@@ -4,7 +4,18 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      borderRadius: { lg: '0.5rem', md: '0.375rem', sm: '0.25rem' },
+      borderRadius: {
+        none: '0',
+        /** Shared curvature — bumped from Tailwind defaults for a softer creator UI */
+        sm: 'calc(var(--radius) - 10px)',
+        DEFAULT: 'calc(var(--radius) - 8px)',
+        md: 'calc(var(--radius) - 6px)',
+        lg: 'var(--radius)',
+        xl: 'calc(var(--radius) + 10px)',
+        '2xl': 'calc(var(--radius) + 18px)',
+        '3xl': 'calc(var(--radius) + 28px)',
+        full: '9999px',
+      },
       colors: {
         border: 'hsl(var(--border))',
         background: 'hsl(var(--background))',

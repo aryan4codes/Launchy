@@ -13,7 +13,7 @@
 - **`agents/`** wires CrewAI via `crew_adapter.py` + YAML.
 - **`tools/`** CrewAI tools + Chroma helpers.
 - **`cli/`** and **`api/`** are thin shims over `PipelineController` plus workflow HTTP routes.
-- **`workflow/`** — DAG specs, node handlers, and `WorkflowEngine` (see `workflow/AGENTS.md`).
+- **`workflow/`** — DAG specs, node handlers, and `WorkflowEngine`. **Product stance**: prioritize non-technical creators — guided inspector fields, minimal jargon in copy, collapsible tuning (see `workflow/AGENTS.md` and web inspector).
 
 ## External MCP servers (Cursor)
 

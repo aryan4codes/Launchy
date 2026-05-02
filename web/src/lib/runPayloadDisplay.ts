@@ -284,7 +284,7 @@ export type ResultsBoardPartition = {
   other: NodeOutputBlock[];
 };
 
-/** Group outputs for dashboard layout (AVCM-aligned; safe on unknown workflows). */
+/** Group outputs for dashboard layout (Launchy results board; safe on unknown workflows). */
 export function partitionResultsBoard(blocks: NodeOutputBlock[]): ResultsBoardPartition {
   const sources: NodeOutputBlock[] = [];
   const transforms: NodeOutputBlock[] = [];

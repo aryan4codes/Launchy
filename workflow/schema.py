@@ -130,16 +130,43 @@ class OutputPiecesParams(BaseModel):
 class OpenAIImageParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    prompt_template: str
-    model: str | None = "gpt-image-2"
-    """Pipe-separated image paths (Jinja). Empty → ``images.generate``; one or more → ``images.edit``."""
+    prompt_template: str = Field(
+        ...,
+        title="Image instructions",
+        description=(
+            "What the model should paint. Plain language is fine; the studio can optionally "
+            "append your topic or output from your Brief step."
+        ),
+    )
+    model: str | None = Field(
+        default="gpt-image-2",
+        title="Model",
+        description="Rarely needs changing.",
+    )
+    quality: str | None = Field(
+        default=None,
+        title="Quality",
+        description="Leave empty for defaults.",
+    )
+    size: str | None = Field(
+        default=None,
+        title="Pixel size",
+        description='e.g. "1024x1024". Leave empty for defaults.',
+    )
 
-    input_images_template: str | None = None
-    mask_image_path_template: str | None = None
-    size: str | None = None
-    quality: str | None = None
-
-
+    input_images_template: str | None = Field(
+        default=None,
+        title="Reference image paths",
+        description=(
+            "Optional: pipe-separated filesystem paths when editing photos. Leave empty "
+            "to generate a new image."
+        ),
+    )
+    mask_image_path_template: str | None = Field(
+        default=None,
+        title="Mask image path",
+        description="Optional path to a mask when editing an uploaded image.",
+    )
 class RunStatus(str, Enum):
     pending = "pending"
     running = "running"

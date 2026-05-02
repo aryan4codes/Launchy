@@ -66,3 +66,38 @@ export function buildUrlTemplate(m: UrlTemplateMode): string {
   if (m.mode === 'literal') return m.url
   return `{{ ${m.key} }}`
 }
+
+/** Ends with Topic / Brief wiring used by GPT Image easy-mode. */
+
+const RE_TOPIC_SUFFIX = /\{\{\s*topic\s*\}\}\s*$/
+const RE_BRIEF_SUFFIX = /\{\{\s*upstream\['brief'\]\['text'\]\s*\}\}\s*$/
+
+export type ImagePromptSource = 'plain' | 'topic' | 'brief'
+
+export interface ParsedImagePrompt {
+  intro: string
+  source: ImagePromptSource
+}
+
+/** Parse prompt_template — if unrecognized, treats whole string as freeform intro (`plain`). */
+export function parseImagePrompt(raw: string): ParsedImagePrompt {
+  const trimmed = raw.replace(/\s+$/, '')
+  if (RE_BRIEF_SUFFIX.test(trimmed)) {
+    const intro = trimmed.replace(RE_BRIEF_SUFFIX, '').trimEnd()
+    return { intro, source: 'brief' }
+  }
+  if (RE_TOPIC_SUFFIX.test(trimmed)) {
+    const intro = trimmed.replace(RE_TOPIC_SUFFIX, '').trimEnd()
+    return { intro, source: 'topic' }
+  }
+  return { intro: raw, source: 'plain' }
+}
+
+export function buildImagePrompt(parts: ParsedImagePrompt): string {
+  const intro = parts.intro.trimEnd()
+  const brief = "{{ upstream['brief']['text'] }}"
+  if (parts.source === 'brief')
+    return intro ? `${intro}\n${brief}` : brief
+  if (parts.source === 'topic') return intro ? `${intro}\n{{ topic }}` : '{{ topic }}'
+  return parts.intro
+}

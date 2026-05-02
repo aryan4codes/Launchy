@@ -1,5 +1,5 @@
 {
-  "id": "0e89f884-9566-43a1-82e5-05ca4aaa7628",
+  "id": "04ce5ac2-0d5e-4454-b15c-467f386029bd",
   "name": "Launchy_Images-copy",
   "nodes": [
     {
@@ -7,19 +7,19 @@
       "type": "trigger.input",
       "params": {
         "keys": [
-          "McDonalds"
+          "topic"
         ]
       },
       "position": {
-        "x": -1.0485981308410715,
-        "y": 1.0485981308411283
+        "x": 0.0,
+        "y": 0.0
       }
     },
     {
       "id": "brief",
       "type": "transform.template",
       "params": {
-        "template": "Brand-safe hero image concept for the niche '{{ niche }}'. Focus on optimism, teamwork, abstract UI motifs, cinematic lighting."
+        "template": "Brand-safe hero image concept for the topic '{{ topic }}'. Focus on optimism, teamwork, abstract UI motifs, cinematic lighting tied to timely themes relevant to '{{ topic }}' (no invented news — mood and metaphor only)."
       },
       "position": {
         "x": 260.0,

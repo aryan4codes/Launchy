@@ -9,3 +9,4 @@ alwaysApply: true
 - Python **3.11**. Load env from **`.env`** (never commit secrets).
 - Default LLM: **`gpt-4.1-nano`** (`OPENAI_MODEL`). Social signals default to **Reddit** only; Instagram is opt-in (`include_instagram`).
 - Chroma persistence defaults to `memory/performance_db`; embeddings **`text-embedding-3-small`** via OpenAI.
+- **Workflow Studio (web)** is aimed at **non-technical creators**: avoid surfacing raw JSON in the product UI; prefer guided fields, short copy, and collapsible “optional” blocks (see `workflow/AGENTS.md`, `web/src/lib/nodeCatalog.ts`, `SchemaForm`).

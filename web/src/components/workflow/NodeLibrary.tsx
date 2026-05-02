@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, FileStack, GripVertical } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileStack, GripVertical, Layers } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { CATEGORY_META, getCatalogEntry, groupCatalog, partitionTemplateIds, templateMeta } from '@/lib/nodeCatalog'
 import { cn } from '@/lib/utils'
 
-const DND_MIME = 'application/vnd.avcm.node-type'
+const DND_MIME = 'application/vnd.launchy.node-type'
 
 function TemplateSidebarCard({
   tid,
@@ -70,10 +70,17 @@ export function NodeLibrary({
   return (
     <aside
       className={cn(
-        'flex w-full shrink-0 flex-col border-b border-border bg-card/40 backdrop-blur-md sm:w-[260px] xl:w-[260px] xl:border-b-0 xl:border-r',
+        'pointer-events-none fixed left-2 top-[calc(4rem+env(safe-area-inset-top,0px))] z-[38] sm:left-3',
         className,
       )}
     >
+      <div
+        className={cn(
+          'pointer-events-auto flex max-h-[calc(100dvh-6.25rem)] w-[min(272px,calc(100vw-1rem))] flex-col overflow-hidden',
+          'rounded-2xl border border-border/75 bg-card/90 shadow-2xl shadow-black/15 backdrop-blur-xl',
+          'dark:border-white/10 dark:bg-card/88 dark:shadow-black/40',
+        )}
+      >
       <div className="shrink-0 border-b border-border">
         <button
           type="button"
@@ -143,9 +150,14 @@ export function NodeLibrary({
           ) : (
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           )}
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">Blocks</h2>
-            <p className="truncate text-[10px] text-muted-foreground">Drag nodes onto the canvas or click to insert</p>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Layers className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">Blocks</h2>
+              <p className="truncate text-[10px] text-muted-foreground">
+                Drag nodes onto the canvas or click to insert
+              </p>
+            </div>
           </div>
         </button>
 
@@ -213,6 +225,7 @@ export function NodeLibrary({
             </p>
           </div>
         ) : null}
+      </div>
       </div>
     </aside>
   )

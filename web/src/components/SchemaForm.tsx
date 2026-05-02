@@ -2,6 +2,7 @@
  * Lightweight JSON Schema (Pydantic v2 shapes) → form fields renderer.
  */
 
+import type { ReactNode } from 'react'
 import { HelpCircle } from 'lucide-react'
 
 import { EasyTemplateField } from '@/components/EasyTemplateField'
@@ -110,7 +111,7 @@ function TemplateHint({ fieldKey, catalog }: { fieldKey: string; catalog: NodeCa
   return (
     <span
       className="inline-flex shrink-0 text-muted-foreground"
-      title="Jinja placeholders: {{ niche }}, {{ upstream['id']['text'] }}, etc."
+      title="Composer steps can pull from your Topic or upstream blocks. Guided fields hide the syntax."
     >
       <HelpCircle className="h-3 w-3" aria-hidden />
     </span>
@@ -154,189 +155,144 @@ export function SchemaForm({
     return a.localeCompare(b)
   })
 
-  return (
-    <div className="space-y-4">
-      {sortedKeys.map((key) => {
-        const pid = `${idPrefix}-${key}`
-        const propSchemaUnknown = propsRoot[key]
-        const { inner, nullable, title, enumVals, type } = propMeta(propSchemaUnknown)
+  const advSet = new Set(catalog.inspectorAdvancedKeys ?? [])
+  const primarySorted = sortedKeys.filter((k) => !advSet.has(k))
+  const advancedSorted = sortedKeys.filter((k) => advSet.has(k))
 
-        const labelText = title || key
-        const required = requiredArr.includes(key)
-        const multiline =
-          (catalog.longTextKeys?.includes(key) ?? false) ||
-          ['template', 'task_description_template', 'expected_output', 'query_template'].includes(
-            key,
-          )
+  const renderPropField = (key: string): ReactNode => {
+    const pid = `${idPrefix}-${key}`
+    const propSchemaUnknown = propsRoot[key]
+    const { inner, nullable, title, enumVals, type } = propMeta(propSchemaUnknown)
 
-        const curHas = Object.prototype.hasOwnProperty.call(value, key)
-        const cur = curHas ? value[key] : inner.default
+    const labelText = title || key
+    const required = requiredArr.includes(key)
+    const multiline =
+      (catalog.longTextKeys?.includes(key) ?? false) ||
+      ['template', 'task_description_template', 'expected_output', 'query_template'].includes(key)
 
-        const labelCls = 'flex items-center gap-2 text-[11px] font-medium text-muted-foreground'
+    const curHas = Object.prototype.hasOwnProperty.call(value, key)
+    const cur = curHas ? value[key] : inner.default
 
-        /** ---- enum ---- */
-        if (enumVals && enumVals.length)
-          return (
-            <div key={key} className="space-y-1.5">
-              <div className={labelCls}>
-                <label htmlFor={pid}>{labelText}</label>
-                {required ? <Badge variant="outline">Required</Badge> : null}
-                <TemplateHint fieldKey={key} catalog={catalog} />
-              </div>
-              <select
-                id={pid}
-                className={cn(
-                  'flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring',
-                )}
-                value={(cur ?? '') === null ? '' : String(cur ?? '')}
-                onChange={(e) =>
-                  setKey(key, e.target.value === '' && nullable ? null : e.target.value)
-                }
-              >
-                {!required && nullable ? <option value="">Default / auto</option> : null}
-                {enumVals.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )
+    const labelCls = 'flex items-center gap-2 text-[11px] font-medium text-muted-foreground'
 
-        /** ---- boolean ---- */
-        if (type === 'boolean') {
-          const checked = Boolean(cur)
-          return (
-            <label
-              key={key}
-              className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-card/50 p-2"
-            >
-              <input
-                id={pid}
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-input"
-                checked={checked}
-                onChange={(e) => setKey(key, e.target.checked)}
-              />
-              <span>
-                <span className="text-sm font-medium text-foreground">{labelText}</span>
-                <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                  Toggle this handler option.
-                </span>
-              </span>
-            </label>
-          )
-        }
+    if (enumVals && enumVals.length)
+      return (
+        <div key={key} className="space-y-1.5">
+          <div className={labelCls}>
+            <label htmlFor={pid}>{labelText}</label>
+            {required ? <Badge variant="outline">Required</Badge> : null}
+            <TemplateHint fieldKey={key} catalog={catalog} />
+          </div>
+          <select
+            id={pid}
+            className={cn(
+              'flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring',
+            )}
+            value={(cur ?? '') === null ? '' : String(cur ?? '')}
+            onChange={(e) => setKey(key, e.target.value === '' && nullable ? null : e.target.value)}
+          >
+            {!required && nullable ? <option value="">Default / auto</option> : null}
+            {enumVals.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      )
 
-        /** ---- integer / number ---- */
-        if (type === 'integer' || type === 'number') {
-          const min =
-            typeof inner.minimum === 'number'
-              ? inner.minimum
-              : typeof inner.exclusiveMinimum === 'number'
-                ? inner.exclusiveMinimum
-                : undefined
-          const max =
-            typeof inner.maximum === 'number'
-              ? inner.maximum
-              : typeof inner.exclusiveMaximum === 'number'
-                ? inner.exclusiveMaximum
-                : undefined
-          const n = typeof cur === 'number' ? cur : cur === '' || cur === undefined ? '' : Number(cur)
-          return (
-            <div key={key} className="space-y-1.5">
-              <div className={labelCls}>
-                <label htmlFor={pid}>{labelText}</label>
-                {required ? <Badge variant="outline">Required</Badge> : null}
-                <TemplateHint fieldKey={key} catalog={catalog} />
-              </div>
-              <Input
-                id={pid}
-                type="number"
-                min={min}
-                max={max}
-                step={type === 'integer' ? 1 : 'any'}
-                value={typeof n === 'number' && !Number.isNaN(n) ? n : ''}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (raw === '' && !required) {
-                    setKey(key, null, { remove: true })
-                    return
-                  }
-                  const num = type === 'integer' ? parseInt(raw, 10) : parseFloat(raw)
-                  if (!Number.isNaN(num)) setKey(key, num)
-                }}
-              />
-            </div>
-          )
-        }
+    if (type === 'boolean') {
+      const checked = Boolean(cur)
+      return (
+        <label
+          key={key}
+          className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-card/50 p-2"
+        >
+          <input
+            id={pid}
+            type="checkbox"
+            className="mt-1 h-4 w-4 rounded border-input"
+            checked={checked}
+            onChange={(e) => setKey(key, e.target.checked)}
+          />
+          <span>
+            <span className="text-sm font-medium text-foreground">{labelText}</span>
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              Toggle this handler option.
+            </span>
+          </span>
+        </label>
+      )
+    }
 
-        /** ---- guided template fields (plain inputs → emitted Jinja) ---- */
-        const easyKind = catalog.easyInspector?.[key]
-        if (easyKind && type === 'string') {
-          const strVal = cur === null || cur === undefined ? '' : String(cur)
-          return (
-            <div key={key} className="space-y-2">
-              <div className={labelCls}>
-                <span>{labelText}</span>
-                {required ? <Badge variant="outline">Required</Badge> : null}
-              </div>
-              <EasyTemplateField
-                kind={easyKind}
-                value={strVal}
-                idPrefix={pid}
-                onChange={(next) => setKey(key, next)}
-              />
-            </div>
-          )
-        }
+    if (type === 'integer' || type === 'number') {
+      const min =
+        typeof inner.minimum === 'number'
+          ? inner.minimum
+          : typeof inner.exclusiveMinimum === 'number'
+            ? inner.exclusiveMinimum
+            : undefined
+      const max =
+        typeof inner.maximum === 'number'
+          ? inner.maximum
+          : typeof inner.exclusiveMaximum === 'number'
+            ? inner.exclusiveMaximum
+            : undefined
+      const n = typeof cur === 'number' ? cur : cur === '' || cur === undefined ? '' : Number(cur)
+      return (
+        <div key={key} className="space-y-1.5">
+          <div className={labelCls}>
+            <label htmlFor={pid}>{labelText}</label>
+            {required ? <Badge variant="outline">Required</Badge> : null}
+            <TemplateHint fieldKey={key} catalog={catalog} />
+          </div>
+          <Input
+            id={pid}
+            type="number"
+            min={min}
+            max={max}
+            step={type === 'integer' ? 1 : 'any'}
+            value={typeof n === 'number' && !Number.isNaN(n) ? n : ''}
+            onChange={(e) => {
+              const raw = e.target.value
+              if (raw === '' && !required) {
+                setKey(key, null, { remove: true })
+                return
+              }
+              const num = type === 'integer' ? parseInt(raw, 10) : parseFloat(raw)
+              if (!Number.isNaN(num)) setKey(key, num)
+            }}
+          />
+        </div>
+      )
+    }
 
-        /** ---- array of strings (e.g. trigger keys) ---- */
-        if (type === 'array') {
-          const items = inner.items as JsonObj | undefined
-          const itemType = items?.type as string | undefined
-          const arr = Array.isArray(cur)
-            ? (cur.filter((x) => typeof x === 'string') as string[])
-            : []
-          const text = arr.join(', ')
-          if (itemType === 'string' || items === undefined || items === null)
-            return (
-              <div key={key} className="space-y-1.5">
-                <div className={labelCls}>
-                  <label htmlFor={pid}>{labelText}</label>
-                  {required ? <Badge variant="outline">Required</Badge> : null}
-                  <TemplateHint fieldKey={key} catalog={catalog} />
-                </div>
-                <Input
-                  id={pid}
-                  placeholder="niche, platforms — comma-separated, or leave empty for all inputs"
-                  value={arr.length === 0 && nullable ? '' : text}
-                  onChange={(e) => {
-                    const raw = e.target.value.trim()
-                    if (raw === '' && nullable) setKey(key, null)
-                    else setKey(key, raw.split(',').map((x) => x.trim()).filter(Boolean))
-                  }}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Empty + optional: pass the full workflow input object downstream.
-                </p>
-              </div>
-            )
-          return (
-            <div key={key} className="space-y-1">
-              <label className={labelCls} htmlFor={pid}>
-                {labelText}
-              </label>
-              <Textarea id={pid} value={JSON.stringify(cur ?? [], null, 2)} readOnly spellCheck={false} />
-              <p className="text-[10px] text-muted-foreground">Edit this field in the Raw JSON tab.</p>
-            </div>
-          )
-        }
+    const easyKind = catalog.easyInspector?.[key]
+    if (easyKind && type === 'string') {
+      const strVal = cur === null || cur === undefined ? '' : String(cur)
+      return (
+        <div key={key} className="space-y-2">
+          <div className={labelCls}>
+            <span>{labelText}</span>
+            {required ? <Badge variant="outline">Required</Badge> : null}
+          </div>
+          <EasyTemplateField
+            kind={easyKind}
+            value={strVal}
+            idPrefix={pid}
+            onChange={(next) => setKey(key, next)}
+          />
+        </div>
+      )
+    }
 
-        /** ---- string (default) ---- */
-        const sval = cur === null || cur === undefined ? '' : String(cur)
-        const FieldEl = multiline ? Textarea : Input
+    if (type === 'array') {
+      const items = inner.items as JsonObj | undefined
+      const itemType = items?.type as string | undefined
+      const arr = Array.isArray(cur) ? (cur.filter((x) => typeof x === 'string') as string[]) : []
+      const text = arr.join(', ')
+      if (itemType === 'string' || items === undefined || items === null)
         return (
           <div key={key} className="space-y-1.5">
             <div className={labelCls}>
@@ -344,15 +300,66 @@ export function SchemaForm({
               {required ? <Badge variant="outline">Required</Badge> : null}
               <TemplateHint fieldKey={key} catalog={catalog} />
             </div>
-            <FieldEl
+            <Input
               id={pid}
-              className={cn(multiline && 'min-h-[100px] font-mono text-[12px] leading-relaxed')}
-              value={sval}
-              onChange={(e) => setKey(key, e.target.value)}
+              placeholder="niche, platforms — comma-separated, or leave empty for all inputs"
+              value={arr.length === 0 && nullable ? '' : text}
+              onChange={(e) => {
+                const raw = e.target.value.trim()
+                if (raw === '' && nullable) setKey(key, null)
+                else setKey(key, raw.split(',').map((x) => x.trim()).filter(Boolean))
+              }}
             />
+            <p className="text-[10px] text-muted-foreground">
+              Empty + optional: pass the full workflow input object downstream.
+            </p>
           </div>
         )
-      })}
+      return (
+        <div key={key} className="space-y-1">
+          <label className={labelCls} htmlFor={pid}>
+            {labelText}
+          </label>
+          <Textarea id={pid} value={JSON.stringify(cur ?? [], null, 2)} readOnly spellCheck={false} />
+          <p className="text-[10px] text-muted-foreground">
+            This value is kept as saved—there isn&apos;t a guided editor for this shape yet.
+          </p>
+        </div>
+      )
+    }
+
+    const sval = cur === null || cur === undefined ? '' : String(cur)
+    const FieldEl = multiline ? Textarea : Input
+    return (
+      <div key={key} className="space-y-1.5">
+        <div className={labelCls}>
+          <label htmlFor={pid}>{labelText}</label>
+          {required ? <Badge variant="outline">Required</Badge> : null}
+          <TemplateHint fieldKey={key} catalog={catalog} />
+        </div>
+        <FieldEl
+          id={pid}
+          className={cn(multiline && 'min-h-[100px] font-mono text-[12px] leading-relaxed')}
+          value={sval}
+          onChange={(e) => setKey(key, e.target.value)}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {primarySorted.map((key) => renderPropField(key))}
+      {advancedSorted.length > 0 ? (
+        <details className="rounded-lg border border-border/70 bg-muted/15 px-3 py-2 [&_summary]:select-none">
+          <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground">
+            {catalog.inspectorAdvancedSummary ?? 'Advanced options'}
+          </summary>
+          <div className="mt-3 space-y-4 border-t border-border/60 pt-3">
+            {advancedSorted.map((key) => renderPropField(key))}
+          </div>
+        </details>
+      ) : null}
     </div>
   )
 }

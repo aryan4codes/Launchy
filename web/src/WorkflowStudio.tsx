@@ -1,6 +1,7 @@
 import 'reactflow/dist/style.css'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Background,
   Controls,
@@ -16,6 +17,7 @@ import {
 } from 'reactflow'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import type { WorkflowNodeData } from '@/components/workflow/WorkflowNode'
 import { WorkflowNodeInner } from '@/components/workflow/WorkflowNode'
 import { EmptyCanvasOverlay } from '@/components/workflow/EmptyCanvasOverlay'
@@ -38,6 +40,8 @@ import {
   workflowRunWebSocketUrl,
 } from '@/lib/api'
 import { inferWorkflowInputKeys } from '@/lib/workflowInputs'
+import { templateMeta } from '@/lib/nodeCatalog'
+import { cn } from '@/lib/utils'
 
 const nodeTypes = { wf: WorkflowNodeInner }
 
@@ -221,7 +225,8 @@ export default function WorkflowStudio() {
   const [runLogLines, setRunLogLines] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [runPayload, setRunPayload] = useState<unknown>(null)
-  const [drawerExpanded, setDrawerExpanded] = useState(true)
+  const [drawerExpanded, setDrawerExpanded] = useState(false)
+  const [inspectorOpen, setInspectorOpen] = useState(true)
   const [runUi, setRunUi] = useState<Record<string, NodeRunUi>>({})
 
   const inputKeysArr = useMemo(() => inferWorkflowInputKeys(nodes), [nodes])
@@ -321,7 +326,7 @@ export default function WorkflowStudio() {
     async (tid: string) => {
       setBusy(true)
       try {
-        const spec = await cloneTemplate(tid, `${tid}-copy`)
+        const spec = await cloneTemplate(tid, `${templateMeta(tid).label} (copy)`)
         const { nodes: n, edges: ed } = specToFlow(spec)
         setNodes(n)
         setEdges(ed)
@@ -454,75 +459,128 @@ export default function WorkflowStudio() {
       />
 
       {/*
-        xl: drawer spans only canvas + inspector columns so the blocks library stays full-height
-        and is never covered by the run console. Mobile: single column, drawer below canvas.
+        Floating NodeLibrary (fixed) leaves the canvas full-bleed on the left.
+        xl: canvas + inspector; Run drawer under canvas column only.
       */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden xl:grid-cols-[260px_minmax(0,1fr)_380px] xl:grid-rows-[minmax(0,1fr)_auto]">
-        <NodeLibrary
-          className="min-h-0 overflow-hidden xl:row-span-2"
-          onAdd={(wfType) => addNodeAtPosition(wfType, { x: 180 + nodes.length * 18, y: 120 + nodes.length * 16 })}
-        />
+      <NodeLibrary
+        key={`${workflowId ?? 'draft'}-${nodes.length > 0 ? 'filled' : 'empty'}`}
+        templates={templates}
+        busy={busy}
+        onCloneTemplate={(tid) => void onCloneTemplateCb(tid)}
+        initialBlocksCollapsed={nodes.length === 0}
+        onAdd={(wfType) => addNodeAtPosition(wfType, { x: 180 + nodes.length * 18, y: 120 + nodes.length * 16 })}
+      />
 
-        <div
-          className={
-            nodes.length === 0
-              ? 'relative isolate h-full min-h-[min(50vh,360px)] xl:min-h-0 xl:col-start-2 xl:row-start-1'
-              : 'relative h-full min-h-[min(50vh,360px)] xl:min-h-0 xl:col-start-2 xl:row-start-1'
-          }
-        >
-          <RunUiProvider value={runUi}>
-            <FlowCanvasDnD
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              setSelectedId={setSelectedId}
-              onConnect={onConnect}
-              onDropNode={addNodeAtPosition}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {/* Main row: canvas + run drawer (mobile: column; xl: canvas column + inspector rail) */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div
+              className={
+                nodes.length === 0
+                  ? 'relative isolate h-full min-h-[min(50vh,360px)] min-w-0 flex-1 xl:min-h-0'
+                  : 'relative h-full min-h-[min(50vh,360px)] min-w-0 flex-1 xl:min-h-0'
+              }
+            >
+              <RunUiProvider value={runUi}>
+                <FlowCanvasDnD
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  setSelectedId={setSelectedId}
+                  onConnect={onConnect}
+                  onDropNode={addNodeAtPosition}
+                />
+              </RunUiProvider>
+              {nodes.length === 0 ? (
+                <EmptyCanvasOverlay templates={templates} busy={busy} onCloneTemplate={(tid) => void onCloneTemplateCb(tid)} />
+              ) : null}
+            </div>
+
+            <RunDrawer
+              expanded={drawerExpanded}
+              onToggleExpanded={() => setDrawerExpanded((v) => !v)}
+              runLogText={runLogLines.join('\n\n')}
+              runPayload={runPayload}
+              busy={busy}
+              nodeIdsOrdered={exeOrderIds}
+              nodeTypesById={nodeTypesById}
+              nodeRunUi={runUi}
+              inputsSlot={
+                keysForRunForm.length ? (
+                  <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Topic lives on the first step. Edit it there, then hit Run.
+                  </p>
+                )
+              }
             />
-          </RunUiProvider>
-          {nodes.length === 0 ? (
-            <EmptyCanvasOverlay templates={templates} busy={busy} onCloneTemplate={(tid) => void onCloneTemplateCb(tid)} />
-          ) : null}
+          </div>
+
+          {/* Inspector: slides off to the right when collapsed (desktop only) */}
+          <div
+            className={cn(
+              'relative hidden shrink-0 overflow-hidden border-l border-border bg-muted/10 transition-[width] duration-300 ease-out xl:block',
+              inspectorOpen ? 'w-[380px]' : 'w-0 border-l-transparent',
+            )}
+          >
+            <aside className="flex h-full w-[380px] min-w-[380px] flex-col">
+              <div className="flex shrink-0 items-start gap-2 border-b border-border bg-card/70 px-2 py-2 pl-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-0.5 h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+                  type="button"
+                  title="Hide inspector"
+                  aria-expanded={inspectorOpen}
+                  aria-controls="workflow-inspector-panel"
+                  onClick={() => setInspectorOpen(false)}
+                >
+                  <ChevronRight className="h-4 w-4" aria-hidden />
+                  <span className="sr-only">Hide inspector</span>
+                </Button>
+                <div className="min-w-0 flex-1 py-0.5">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Inspector</h2>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Plain-language fields per step. Open collapsible sections when a block exposes optional tuning.
+                  </p>
+                </div>
+              </div>
+              <div id="workflow-inspector-panel" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <WorkflowInspector
+                  workflowId={workflowId}
+                  selectedId={selectedId}
+                  nodes={nodes}
+                  schemas={schemas}
+                  runPayload={runPayload}
+                  onApplyParams={onApplyParams}
+                />
+              </div>
+            </aside>
+          </div>
         </div>
 
-        <aside className="hidden min-h-0 flex-col overflow-hidden border-l border-border bg-muted/10 xl:col-start-3 xl:row-start-1 xl:flex">
-          <div className="shrink-0 border-b border-border bg-card/70 px-3 py-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Inspector</h2>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Guided fields for each handler. Toggle &quot;Raw JSON&quot; for power tweaks.
-            </p>
-          </div>
-          <WorkflowInspector
-            workflowId={workflowId}
-            selectedId={selectedId}
-            nodes={nodes}
-            schemas={schemas}
-            runPayload={runPayload}
-            onApplyParams={onApplyParams}
-          />
-        </aside>
-
-        <RunDrawer
-          className="xl:col-span-2 xl:col-start-2 xl:row-start-2"
-          expanded={drawerExpanded}
-          onToggleExpanded={() => setDrawerExpanded((v) => !v)}
-          runLogText={runLogLines.join('\n\n')}
-          runPayload={runPayload}
-          busy={busy}
-          nodeIdsOrdered={exeOrderIds}
-          nodeTypesById={nodeTypesById}
-          nodeRunUi={runUi}
-          inputsSlot={
-            keysForRunForm.length ? (
-              <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Topic lives on the first step. Edit it there, then hit Run.
-              </p>
-            )
-          }
-        />
+        {!inspectorOpen ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            type="button"
+            title="Show inspector"
+            className="fixed right-0 top-[22%] z-[30] hidden h-auto min-h-0 w-10 shrink-0 flex-col items-center justify-center gap-2 rounded-l-xl rounded-r-none border border-r-0 px-1 py-5 shadow-lg xl:flex xl:h-auto"
+            onClick={() => setInspectorOpen(true)}
+          >
+            <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+            <span
+              aria-hidden
+              className="origin-center rotate-90 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground"
+            >
+              Inspector
+            </span>
+            <span className="sr-only">Open inspector panel</span>
+          </Button>
+        ) : null}
       </div>
 
       <div className="border-t border-border bg-card/80 xl:hidden">

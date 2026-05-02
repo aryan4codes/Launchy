@@ -1,18 +1,20 @@
 {
-  "id": "avcm_with_images",
-  "name": "Niche brief to hero image",
+  "id": "Launchy_Images",
+  "name": "Topic brief to hero image",
   "nodes": [
     {
       "id": "in",
       "type": "trigger.input",
-      "data": {},
+      "data": {
+        "keys": ["topic"]
+      },
       "position": { "x": 0, "y": 0 }
     },
     {
       "id": "brief",
       "type": "transform.template",
       "data": {
-        "template": "Brand-safe hero image concept for the niche '{{ niche }}'. Focus on optimism, teamwork, abstract UI motifs, cinematic lighting."
+        "template": "Brand-safe hero image concept for the topic '{{ topic }}'. Focus on optimism, teamwork, abstract UI motifs, cinematic lighting tied to timely themes relevant to '{{ topic }}' (no invented news — mood and metaphor only)."
       },
       "position": { "x": 260, "y": 0 }
     },

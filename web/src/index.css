@@ -23,6 +23,7 @@
     --border: 150 10% 86%;
     --input: 150 10% 86%;
     --ring: 142 71% 35%;
+    --radius: 1.125rem;
     color-scheme: light;
   }
 
@@ -46,6 +47,7 @@
     --border: 240 4% 18%;
     --input: 240 4% 18%;
     --ring: 142 76% 36%;
+    --radius: 1.125rem;
     color-scheme: dark;
   }
 
@@ -74,15 +76,31 @@ body,
   }
 }
 
-/* Stylized dotted canvas — light + dark */
+@keyframes run-connector-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
+}
+.run-connector-shimmer {
+  animation: run-connector-shimmer 1.25s ease-in-out infinite;
+}
+
+/* Stylized dotted canvas — light + dark (soft neon dot glow) */
 .studio-flow .react-flow__pane {
   background-color: hsl(145 35% 96%) !important;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    hsl(142 55% 38% / 0.09) 1px,
-    transparent 0
-  ) !important;
-  background-size: 22px 22px !important;
+  background-image:
+    radial-gradient(circle 2.5px at 1px 1px, hsl(142 71% 42% / 0.22) 0, hsl(142 76% 52% / 0.08) 1px, transparent 2.2px),
+    radial-gradient(circle at 1px 1px, hsl(142 55% 38% / 0.13) 1px, transparent 0) !important;
+  background-size: 22px 22px, 22px 22px !important;
+}
+
+/* React Flow <Background /> dots — extra glow layer */
+.studio-flow .react-flow__background pattern circle {
+  fill: hsl(142 65% 42% / 0.28);
+  filter: drop-shadow(0 0 2.5px hsl(142 76% 42% / 0.45));
 }
 
 /* ── Markdown prose for results page ── */
@@ -138,9 +156,13 @@ body,
 
 .dark .studio-flow .react-flow__pane {
   background-color: hsl(240 12% 5%) !important;
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    hsl(142 76% 36% / 0.12) 1px,
-    transparent 0
-  ) !important;
+  background-image:
+    radial-gradient(circle 2.5px at 1px 1px, hsl(142 76% 46% / 0.38) 0, hsl(142 90% 60% / 0.06) 1px, transparent 2.2px),
+    radial-gradient(circle at 1px 1px, hsl(142 76% 36% / 0.16) 1px, transparent 0) !important;
+  background-size: 22px 22px, 22px 22px !important;
+}
+
+.dark .studio-flow .react-flow__background pattern circle {
+  fill: hsl(142 70% 50% / 0.42);
+  filter: drop-shadow(0 0 3px hsl(142 76% 50% / 0.55));
 }

@@ -1,0 +1,198 @@
+{
+  "id": "competitor_teardown",
+  "name": "Competitor Teardown & Counter-Positioning",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {
+        "keys": [
+          "topic"
+        ]
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names \u2014 only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": {
+        "x": 220,
+        "y": 0
+      }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
+        "limit": 15
+      },
+      "position": {
+        "x": 460,
+        "y": -110
+      }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": {
+        "query_template": "{{ topic }} competitor comparison reviews positioning gaps SWOT commentary 2026"
+      },
+      "position": {
+        "x": 460,
+        "y": 110
+      }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "data": {
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves \u2014 but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (\u201cwhy this matters NOW for [audience]\u201d) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
+      },
+      "position": {
+        "x": 700,
+        "y": 0
+      }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Competitive Intelligence Analyst",
+        "goal": "C.A.R.D. read on '{{ topic }}' landscape: Collect\u2192Analyze\u2192Reveal\u2192Deploy anchored in signals.",
+        "backstory": "You distill positioning claims, underserved segments, sentiment swings without personal attacks.",
+        "task_description_template": "Topic (often a brand/category): {{ topic }}\n\nSignals:\n{{ upstream['merge_signals']['text'] }}\n\nOutput structured intel: Claims, Emotional gaps, Risks competitors ignore, verbatim complaints/praise.",
+        "expected_output": "Intel memo emphasizing evidence-grounded citations."
+      },
+      "position": {
+        "x": 920,
+        "y": 0
+      }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Counter\u2011Positioning Strategist",
+        "goal": "Six fair analytical angles on '{{ topic }}' highlighting differentiation opportunities.",
+        "backstory": "Blend gap maps, objection mining, comparative matrices \u2014 never insult individuals.",
+        "task_description_template": "Topic: {{ topic }}\n\nIntel:\n{{ upstream['psych']['text'] }}\n\nAngles spanning: misconception correction, hidden cost teardown, underserved cohort, comparative scorecard, review sentiment flip, challenger manifesto referencing evidence.",
+        "expected_output": "6 numbered teardown angles with citations to memo bullets."
+      },
+      "position": {
+        "x": 1140,
+        "y": 0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Competitive Content Writer",
+        "goal": "Channel-ready teardown assets for '{{ topic }}' emphasizing balanced analysis tone.",
+        "backstory": "LinkedIn long analysis, X factual thread, concise video rant with receipts paraphrase.",
+        "task_description_template": "Topic: {{ topic }}\n\nAngles:\n{{ upstream['angles']['text'] }}\n\nDeliver per angle LinkedIn (~700\u20131400 chars) + X bullet thread skeleton + Short script \u226470 words referencing evidence callouts.",
+        "expected_output": "Multi-channel copy blocks + disclaimers when evidence thin."
+      },
+      "position": {
+        "x": 1360,
+        "y": 0
+      }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Teardown Creative Director",
+        "goal": "Visual metaphors for '{{ topic }}' comparisons: split frames, matrix graphics, quote callouts paraphrased.",
+        "backstory": "Emphasize fair-use paraphrase, no forged UI chrome.",
+        "task_description_template": "Topic: {{ topic }}\n\nCopy:\n{{ upstream['copy']['text'] }}\n\nSuggest carousel flow + infographic hierarchy.",
+        "expected_output": "Storyboard bullets + typography hierarchy."
+      },
+      "position": {
+        "x": 1580,
+        "y": 0
+      }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Intel Performance Analyst",
+        "goal": "Grade '{{ topic }}' teardown drafts for factual rigor + differentiation clarity.",
+        "backstory": "Reward nuanced takes; downgrade mudslinging or unsourced superiority claims.",
+        "task_description_template": "Topic: {{ topic }}\n\nCreative:\n{{ upstream['creative_brief']['text'] }}\n\nRank with citation strength.",
+        "expected_output": "Markdown rank table referencing evidence depth + mitigation notes."
+      },
+      "position": {
+        "x": 1800,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": {
+        "x": 2020,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "in",
+      "target": "subreddit_researcher"
+    },
+    {
+      "source": "subreddit_researcher",
+      "target": "reddit"
+    },
+    {
+      "source": "in",
+      "target": "serper"
+    },
+    {
+      "source": "reddit",
+      "target": "merge_signals"
+    },
+    {
+      "source": "serper",
+      "target": "merge_signals"
+    },
+    {
+      "source": "merge_signals",
+      "target": "psych"
+    },
+    {
+      "source": "psych",
+      "target": "angles"
+    },
+    {
+      "source": "angles",
+      "target": "copy"
+    },
+    {
+      "source": "copy",
+      "target": "creative_brief"
+    },
+    {
+      "source": "creative_brief",
+      "target": "score"
+    },
+    {
+      "source": "score",
+      "target": "out"
+    }
+  ]
+}

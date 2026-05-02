@@ -3,12 +3,9 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Node } from 'reactflow'
 
 import { SchemaForm, mergedParams } from '@/components/SchemaForm'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { getCatalogEntry } from '@/lib/nodeCatalog'
-import { cn } from '@/lib/utils'
-
 import type { WorkflowNodeData } from './WorkflowNode'
 
 function stripPersisted(raw: WorkflowNodeData): Record<string, unknown> {
@@ -47,14 +44,12 @@ export function WorkflowInspector({
   const catalog = selected ? getCatalogEntry(wfTypeSel) : null
 
   const [formBlob, setFormBlob] = useState<Record<string, unknown>>({})
-  const [rawJson, setRawJson] = useState('{}')
 
   const baseKey = `${workflowId}:${selected?.id}:${wfTypeSel}`
   useEffect(() => {
     if (!selected || !catalog) return
     const merged = mergedParams(schemaForType, stripPersisted(selected.data as WorkflowNodeData))
     setFormBlob(merged)
-    setRawJson(JSON.stringify(merged, null, 2))
   }, [baseKey, wfTypeSel, schemaForType])
 
   const nodeOutPreview = useMemo(() => {
@@ -77,16 +72,6 @@ export function WorkflowInspector({
 
   const wfType = wfTypeSel
 
-  const applyRaw = () => {
-    try {
-      const parsed = JSON.parse(rawJson || '{}') as Record<string, unknown>
-      setFormBlob(parsed)
-      onApplyParams(selected.id, { wfType, label: selected.id, ...parsed })
-    } catch {
-      window.alert('Invalid JSON parameters')
-    }
-  }
-
   if (wfType === 'trigger.input') {
     const topicVal =
       typeof formBlob.default_topic === 'string' ? (formBlob.default_topic as string) : ''
@@ -94,7 +79,6 @@ export function WorkflowInspector({
       const cleaned = next.replace(/^\s+/, '')
       const updated = { ...formBlob, default_topic: cleaned, keys: ['topic'] }
       setFormBlob(updated)
-      setRawJson(JSON.stringify(updated, null, 2))
       onApplyParams(selected.id, { wfType, label: selected.id, ...updated })
     }
     return (
@@ -123,8 +107,7 @@ export function WorkflowInspector({
             onChange={(e) => setTopic(e.target.value)}
           />
           <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Available downstream as <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{`{{ topic }}`}</code>.
-            This field is sent when you hit Run — there is no separate topic box elsewhere.
+            Other steps pull from this automatically—there isn&apos;t a separate topic box later in the workflow.
           </p>
         </div>
       </div>
@@ -139,23 +122,14 @@ export function WorkflowInspector({
           <div className="truncate font-mono text-sm font-semibold text-foreground">{selected.id}</div>
         </div>
         <p className="text-[12px] leading-relaxed text-muted-foreground">{catalog.description}</p>
-        <p className="rounded-md border border-border/60 bg-muted/30 px-2.5 py-2 text-[11px] leading-snug text-muted-foreground">
-          <span className="font-semibold text-foreground">Forms</span> fills in the JSON for you. Use{' '}
-          <span className="font-semibold text-foreground">Raw JSON</span> only for advanced Jinja (e.g.{' '}
-          <code className="rounded bg-background px-1 py-0.5 font-mono text-[10px]">upstream[&apos;node&apos;][&apos;text&apos;]</code>
-          ).
-        </p>
       </div>
 
       <Tabs defaultValue="form" className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="mx-3 mt-3 shrink-0">
-          <TabsTrigger className="flex-1 text-xs" value="form">
-            Forms
+        <TabsList className="mx-3 mt-3 grid shrink-0 grid-cols-2">
+          <TabsTrigger className="text-xs" value="form">
+            Settings
           </TabsTrigger>
-          <TabsTrigger className="flex-1 text-xs" value="advanced">
-            Raw JSON
-          </TabsTrigger>
-          <TabsTrigger className="flex-1 text-xs" value="output">
+          <TabsTrigger className="text-xs" value="output">
             Last run
           </TabsTrigger>
         </TabsList>
@@ -169,24 +143,9 @@ export function WorkflowInspector({
             idPrefix={`n-${selected.id}`}
             onChange={(next) => {
               setFormBlob(next)
-              setRawJson(JSON.stringify(next, null, 2))
               onApplyParams(selected.id, { wfType, label: selected.id, ...next })
             }}
           />
-        </TabsContent>
-
-        <TabsContent value="advanced" className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-3">
-          <label className="text-[11px] text-muted-foreground">Parameters (`data`)</label>
-          <Textarea className="mt-1 min-h-[220px] font-mono text-[11px]" value={rawJson} onChange={(e) => setRawJson(e.target.value)} />
-          <Button type="button" variant="outline" className="mt-2 w-full" onClick={applyRaw}>
-            Apply JSON
-          </Button>
-          <details className="mt-4 rounded-lg border border-border bg-card/40 p-2">
-            <summary className={cn('cursor-pointer text-[11px] font-medium text-muted-foreground')}>API schema</summary>
-            <pre className="mt-2 max-h-48 overflow-auto text-[10px] text-muted-foreground">
-              {JSON.stringify(schemaForType ?? {}, null, 2)}
-            </pre>
-          </details>
         </TabsContent>
 
         <TabsContent value="output" className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-3">

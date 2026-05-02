@@ -1,9 +1,9 @@
 /**
  * Friendly, human-readable metadata for each node kind.
  *
- * The backend `/workflows/node-types` endpoint returns raw JSON-Schemas; this
- * catalog adds the personality (label, description, icon, color, "what does
- * this node do at a glance" hints) so the UI never feels like a JSON editor.
+ * The backend `/workflows/node-types` endpoint returns machine JSON Schemas; this
+ * catalog adds copy, icons, and guided controls so the Workflow Studio reads
+ * like a creator tool — not a schema dump.
  */
 import type { LucideIcon } from "lucide-react";
 import {
@@ -30,7 +30,11 @@ export type NodeCategory =
   | "output";
 
 /** Guided inspector controls that rebuild template strings for the workflow payload */
-export type EasyInspectorField = "reddit_subreddits" | "search_query_parts" | "url_or_input";
+export type EasyInspectorField =
+  | "reddit_subreddits"
+  | "search_query_parts"
+  | "url_or_input"
+  | "image_generation_prompt";
 
 export interface NodeCatalogEntry {
   /** stable backend node-type id (matches workflow handler registry) */
@@ -51,6 +55,10 @@ export interface NodeCatalogEntry {
   templateKeys?: string[];
   /** Guided fields — UI builds JSON-safe template strings automatically */
   easyInspector?: Partial<Record<string, EasyInspectorField>>;
+  /** Params shown under a collapsible “optional” block (paths, tuning, etc.) */
+  inspectorAdvancedKeys?: string[];
+  /** Summary line for that collapsible region */
+  inspectorAdvancedSummary?: string;
 }
 
 export const CATEGORY_META: Record<
@@ -208,14 +216,16 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "media.gemini_image",
-    label: "GPT image",
-    short: "Generate or edit images via OpenAI.",
+    label: "Image (GPT)",
+    short: "Create images from plain-language instructions.",
     description:
-      "Uses the OpenAI Image API: text-only prompts call images.generate (gpt-image-2). Set input_images_template to one or more pipe-separated file paths (after Jinja) to use images.edit; optional mask_image_path_template for masked edits. Saves PNGs under the run; the run drawer previews them.",
+      "Describe what should be on screen. You can optionally pull words from your topic or from your Brief step without typing code. Saves PNGs in the run; previews show in Run progress.",
     category: "media",
     icon: ImageIcon,
-    longTextKeys: ["prompt_template", "input_images_template", "mask_image_path_template"],
-    templateKeys: ["prompt_template", "input_images_template", "mask_image_path_template"],
+    longTextKeys: ["input_images_template", "mask_image_path_template"],
+    easyInspector: { prompt_template: "image_generation_prompt" },
+    inspectorAdvancedKeys: ["model", "quality", "size", "input_images_template", "mask_image_path_template"],
+    inspectorAdvancedSummary: "Optional: model, size & files on disk",
   },
   {
     type: "output.pieces",
@@ -232,9 +242,9 @@ const CATALOG: NodeCatalogEntry[] = [
 const FALLBACK: NodeCatalogEntry = {
   type: "unknown",
   label: "Unknown node",
-  short: "No catalog entry — using raw JSON editor.",
+  short: "This block runs with the parameters shown beside it.",
   description:
-    "This node type isn't in the UI catalog yet. You can still edit its parameters with the Advanced JSON view in the inspector.",
+    "This handler isn't in the curated catalog yet. Use the labelled fields above when available — no separate JSON mode.",
   category: "transform",
   icon: Workflow,
 };
@@ -272,44 +282,146 @@ export function groupCatalog(): Array<{
     .filter((g) => g.entries.length > 0);
 }
 
+export type TemplateCatalogCategory = "general" | "usecase";
+
 export interface TemplateMeta {
   id: string;
   label: string;
   description: string;
+  /** One short line for compact cards (e.g. empty canvas). Full `description` for tooltips & sidebar. */
+  tagline?: string;
   badge?: string;
+  category?: TemplateCatalogCategory;
+}
+
+const GENERAL_TEMPLATE_ORDER: readonly string[] = [
+  "avcm_classic",
+  "avcm_with_images",
+  "research_only",
+  "tweet_only",
+];
+
+const USECASE_TEMPLATE_ORDER: readonly string[] = [
+  "saas_launch",
+  "personal_brand",
+  "ecommerce",
+  "youtube",
+  "competitor_teardown",
+];
+
+function sortIdsWithPreferredOrder(ids: string[], preferred: readonly string[]): string[] {
+  const pick = new Set(ids);
+  const out: string[] = [];
+  for (const id of preferred) {
+    if (pick.has(id)) out.push(id);
+  }
+  const rest = ids.filter((id) => !out.includes(id)).sort((a, b) => a.localeCompare(b));
+  return [...out, ...rest];
+}
+
+/** Split API template ids into UI groups; unknown templates default to `general`. */
+export function partitionTemplateIds(remoteIds: string[]): {
+  general: string[];
+  usecase: string[];
+} {
+  const usecase: string[] = [];
+  const general: string[] = [];
+  for (const id of remoteIds) {
+    const cat = templateMeta(id).category ?? "general";
+    if (cat === "usecase") usecase.push(id);
+    else general.push(id);
+  }
+  return {
+    general: sortIdsWithPreferredOrder(general, GENERAL_TEMPLATE_ORDER),
+    usecase: sortIdsWithPreferredOrder(usecase, USECASE_TEMPLATE_ORDER),
+  };
 }
 
 export const TEMPLATE_META: Record<string, TemplateMeta> = {
   avcm_classic: {
     id: "avcm_classic",
-    label: "AVCM Classic",
+    label: "Launchy Virality",
     description:
       "Reddit + Serper signals → psych → angles → copy → creative brief → score.",
+    tagline: "Research, angles, copy, and scoring",
     badge: "Recommended",
+    category: "general",
   },
   avcm_with_images: {
     id: "avcm_with_images",
-    label: "AVCM with images",
-    description: "Classic flow plus Gemini image generation per piece.",
+    label: "Pipeline with hero image",
+    description:
+      "Full research-through-score flow plus one GPT-generated hero image from your topic and brief.",
+    tagline: "Same growth pipeline plus an AI hero image",
+    category: "general",
   },
   research_only: {
     id: "research_only",
     label: "Research only",
-    description: "Just the signal-gathering half of the pipeline.",
+    description: "Subreddit discovery + Reddit + web search signals only.",
+    tagline: "Reddit + web search only—no long agent chain",
+    category: "general",
   },
   tweet_only: {
     id: "tweet_only",
     label: "Tweet draft",
-    description: "Minimal flow that drafts a single tweet from a niche.",
+    description: "One timely tweet draft from your topic—no wiring required.",
+    tagline: "One tweet from your topic—minimal graph",
+    category: "general",
+  },
+  saas_launch: {
+    id: "saas_launch",
+    label: "SaaS Product Launch",
+    description: "Launch psychology, demos, traction hooks, PH/LI/X cadence—all from topic + signals.",
+    tagline: "Launch-ready copy for SaaS and Product Hunt",
+    category: "usecase",
+  },
+  personal_brand: {
+    id: "personal_brand",
+    label: "Personal Brand Growth",
+    description: "Authority angles, LinkedIn + X drafts, credibility hooks from audience language.",
+    tagline: "Authority angles for LinkedIn and X",
+    category: "usecase",
+  },
+  ecommerce: {
+    id: "ecommerce",
+    label: "E-commerce / D2C",
+    description: "UGC angles, PAS/AIDA conversions, Meta + TikTok + email stubs from shopper signals.",
+    tagline: "D2C angles grounded in shopper language",
+    category: "usecase",
+  },
+  youtube: {
+    id: "youtube",
+    label: "YouTube Content Strategy",
+    description: "Titles, thumbnails, beat sheets, Shorts—from retention-first packaging prompts.",
+    tagline: "Titles, retention beats, and Shorts ideas",
+    category: "usecase",
+  },
+  competitor_teardown: {
+    id: "competitor_teardown",
+    label: "Competitor Teardown",
+    description: "C.A.R.D.-style intel, gap angles, balanced counter-positioning copy.",
+    tagline: "Fair teardowns and counter-positioning",
+    category: "usecase",
   },
 };
 
 export function templateMeta(id: string): TemplateMeta {
-  return (
-    TEMPLATE_META[id] ?? {
-      id,
-      label: id,
-      description: "Template",
-    }
-  );
+  const known = TEMPLATE_META[id]
+  if (known) return known
+  const slug =
+    id
+      .replace(/^avcm_/i, "")
+      .replace(/_/g, " ")
+      .trim() || id.replace(/_/g, " ")
+  const human = slug
+    .split(/\s+/)
+    .map((w) => w.slice(0, 1).toUpperCase() + w.slice(1))
+    .join(" ")
+  return {
+    id,
+    label: human,
+    description: "Workflow template bundled with Launchy.",
+    category: "general",
+  }
 }

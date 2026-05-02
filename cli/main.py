@@ -84,7 +84,7 @@ def serve_cmd(
     port: int = typer.Option(8000, "--port"),
 ) -> None:
     """Run FastAPI server (same PipelineController as CLI)."""
-    uvicorn.run("api.server:app", host=host, port=port, reload=False)
+    uvicorn.run("api.server:app", host=host, port=port, reload=True)
 
 
 def main() -> None:

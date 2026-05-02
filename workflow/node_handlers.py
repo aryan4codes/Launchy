@@ -84,9 +84,13 @@ def _run_crewai_single_task(ctx: NodeExecContext, p: CrewAIParams) -> dict[str, 
 
 
 def handler_trigger_input(ctx: NodeExecContext, p: TriggerInputParams) -> dict[str, Any]:
+    inputs = dict(ctx.workflow_inputs)
+    if p.default_topic and not str(inputs.get("topic", "")).strip():
+        inputs["topic"] = p.default_topic
+        ctx.workflow_inputs["topic"] = p.default_topic  # propagate to downstream {{ topic }}
     if p.keys:
-        return {k: ctx.workflow_inputs[k] for k in p.keys if k in ctx.workflow_inputs}
-    return dict(ctx.workflow_inputs)
+        return {k: inputs[k] for k in p.keys if k in inputs}
+    return inputs
 
 
 def handler_crewai(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:

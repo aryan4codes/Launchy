@@ -64,6 +64,20 @@ export function NodeOutputCard({
 
   const serperData = markdown.trim() ? tryParseSerperJson(markdown) : null;
 
+  // Subreddit list: comma-separated single-line strings with no spaces/markdown
+  const isSubredditList =
+    nodeId === "subreddit_researcher" &&
+    markdown.trim() &&
+    !markdown.includes("\n") &&
+    markdown.split(",").length > 1;
+
+  const subredditPills = isSubredditList
+    ? markdown
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : null;
+
   return (
     <section
       className={cn(
@@ -148,7 +162,25 @@ export function NodeOutputCard({
                 {copied ? "Copied" : "Copy"}
               </Button>
               <div className={cn(markdownWrapperClass)}>
-                {serperData ? <SearchResults data={serperData} /> : <MarkdownProse content={markdown} />}
+                {subredditPills ? (
+                  <div className="flex flex-wrap gap-2 py-1">
+                    {subredditPills.map((sub) => (
+                      <a
+                        key={sub}
+                        href={`https://reddit.com/r/${sub}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 ring-1 ring-orange-200 transition-colors hover:bg-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:ring-orange-800/50 dark:hover:bg-orange-900/50"
+                      >
+                        r/{sub}
+                      </a>
+                    ))}
+                  </div>
+                ) : serperData ? (
+                  <SearchResults data={serperData} />
+                ) : (
+                  <MarkdownProse content={markdown} />
+                )}
               </div>
             </div>
           ) : null}

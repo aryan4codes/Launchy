@@ -81,8 +81,8 @@ export default function ResultsPage() {
 
   const nicheLabel = useMemo(() => {
     if (!inputs) return null;
-    const niche = inputs.niche;
-    if (typeof niche === "string" && niche.trim()) return niche.trim();
+    const topic = inputs.topic ?? inputs.niche;
+    if (typeof topic === "string" && topic.trim()) return topic.trim();
     return null;
   }, [inputs]);
 
@@ -104,6 +104,7 @@ export default function ResultsPage() {
         : "border-border bg-muted/30 text-muted-foreground";
 
   const showDashboard =
+    board.researchAgents.length > 0 ||
     board.sources.length > 0 ||
     board.transforms.length > 0 ||
     board.strategyAgents.length > 0 ||
@@ -243,8 +244,8 @@ export default function ResultsPage() {
               </div>
               <p className="text-balance text-lg font-semibold leading-snug text-foreground md:text-xl">
                 {nicheLabel
-                  ? <>How positioning and creative could read for&nbsp;<span className="text-primary">{nicheLabel}</span></>
-                  : "How positioning and creative could ship from this workflow."}
+                  ? <>Deep viral research &amp; content pack for&nbsp;<span className="text-primary">{nicheLabel}</span></>
+                  : "Deep viral research & content pack from this workflow."}
               </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                 <span className="font-mono">{meta.runId ?? runId}</span>
@@ -289,9 +290,23 @@ export default function ResultsPage() {
           <>
             <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
               <div className="space-y-4 lg:col-span-5">
+                {board.researchAgents.length ? (
+                  <div className="space-y-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                        Topic research
+                      </h2>
+                      <span className="text-[10px] text-muted-foreground">Subreddit discovery</span>
+                    </div>
+                    {board.researchAgents.map((b) =>
+                      renderCollapsibleResearch(b, b.nodeId, true),
+                    )}
+                  </div>
+                ) : null}
+
                 <div className="flex items-baseline justify-between gap-2">
                   <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Audience signals
+                    Community signals
                   </h2>
                   <span className="text-[10px] text-muted-foreground">Sources → context</span>
                 </div>

@@ -104,13 +104,13 @@ export const CATEGORY_META: Record<
 const CATALOG: NodeCatalogEntry[] = [
   {
     type: "trigger.input",
-    label: "Workflow inputs",
-    short: "Entry point — exposes run inputs to downstream nodes.",
+    label: "Topic",
+    short: "Type the topic you want researched.",
     description:
-      "Every workflow starts here. The values you pass when running the workflow (e.g. niche, subreddits, platforms) become available to downstream nodes via {{ key }} templates.",
+      "Type the subject you want a deep viral content & marketing analysis on. Downstream nodes can reference it as {{ topic }}.",
     category: "trigger",
     icon: Play,
-    previewKeys: ["keys"],
+    previewKeys: ["default_topic"],
   },
   {
     type: "source.reddit",

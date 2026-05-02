@@ -1,6 +1,6 @@
 {
-  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
-  "name": "AVCM Viral Research & Content Pack",
+  "id": "6f5df7c3-7d85-4c29-a42f-bf62a14f5df1",
+  "name": "avcm_classic-copy",
   "nodes": [
     {
       "id": "in",
@@ -8,7 +8,8 @@
       "params": {
         "keys": [
           "topic"
-        ]
+        ],
+        "default_topic": "Mutual Funds in India"
       },
       "position": {
         "x": 0.0,

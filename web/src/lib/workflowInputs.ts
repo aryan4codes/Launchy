@@ -1,6 +1,6 @@
 import type { Node } from 'reactflow'
 
-export const DEFAULT_TRIGGER_KEYS = ['niche', 'subreddits', 'platforms']
+export const DEFAULT_TRIGGER_KEYS = ['topic', 'platforms']
 
 export function inferWorkflowInputKeys(nodes: Node[]): string[] {
   const trig = nodes.filter((n) => (n.data as { wfType?: string }).wfType === 'trigger.input')

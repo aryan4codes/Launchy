@@ -1,6 +1,6 @@
 {
-  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
-  "name": "AVCM Viral Research & Content Pack",
+  "id": "0b67e48b-80d2-4db7-9d2c-f022dd7df29e",
+  "name": "avcm_classic-copy",
   "nodes": [
     {
       "id": "in",
@@ -151,77 +151,77 @@
   ],
   "edges": [
     {
-      "id": "in-subreddit_researcher-0",
+      "id": null,
       "source": "in",
       "target": "subreddit_researcher",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "subreddit_researcher-reddit-1",
+      "id": null,
       "source": "subreddit_researcher",
       "target": "reddit",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "in-serper-2",
+      "id": null,
       "source": "in",
       "target": "serper",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "reddit-merge_signals-3",
+      "id": null,
       "source": "reddit",
       "target": "merge_signals",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "serper-merge_signals-4",
+      "id": null,
       "source": "serper",
       "target": "merge_signals",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "merge_signals-psych-5",
+      "id": null,
       "source": "merge_signals",
       "target": "psych",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "psych-angles-6",
+      "id": null,
       "source": "psych",
       "target": "angles",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "angles-copy-7",
+      "id": null,
       "source": "angles",
       "target": "copy",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "copy-creative_brief-8",
+      "id": null,
       "source": "copy",
       "target": "creative_brief",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "creative_brief-score-9",
+      "id": null,
       "source": "creative_brief",
       "target": "score",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "score-out-10",
+      "id": null,
       "source": "score",
       "target": "out",
       "sourceHandle": null,

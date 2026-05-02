@@ -1,6 +1,6 @@
 {
-  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
-  "name": "AVCM Viral Research & Content Pack",
+  "id": "d02c0643-35bd-47fa-89af-8f9cc8d76473",
+  "name": "avcm_classic-copy",
   "nodes": [
     {
       "id": "in",
@@ -11,8 +11,8 @@
         ]
       },
       "position": {
-        "x": 0.0,
-        "y": 0.0
+        "x": -250.17520274117118,
+        "y": -4.93766847515468
       }
     },
     {
@@ -26,8 +26,8 @@
         "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
       },
       "position": {
-        "x": 220.0,
-        "y": 0.0
+        "x": 59.17086992423083,
+        "y": -113.53473929320236
       }
     },
     {
@@ -38,8 +38,8 @@
         "limit": 15
       },
       "position": {
-        "x": 460.0,
-        "y": -110.0
+        "x": 371.1219674472154,
+        "y": -133.04245288405522
       }
     },
     {
@@ -49,8 +49,8 @@
         "query_template": "{{ topic }} recent news launches product announcements breakthrough 2026"
       },
       "position": {
-        "x": 460.0,
-        "y": 110.0
+        "x": 33.71462164497791,
+        "y": 129.75067390061878
       }
     },
     {

@@ -1,3 +1,4 @@
+import { Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Node } from 'reactflow'
 
@@ -84,6 +85,50 @@ export function WorkflowInspector({
     } catch {
       window.alert('Invalid JSON parameters')
     }
+  }
+
+  if (wfType === 'trigger.input') {
+    const topicVal =
+      typeof formBlob.default_topic === 'string' ? (formBlob.default_topic as string) : ''
+    const setTopic = (next: string) => {
+      const cleaned = next.replace(/^\s+/, '')
+      const updated = { ...formBlob, default_topic: cleaned, keys: ['topic'] }
+      setFormBlob(updated)
+      setRawJson(JSON.stringify(updated, null, 2))
+      onApplyParams(selected.id, { wfType, label: selected.id, ...updated })
+    }
+    return (
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="shrink-0 border-b border-border bg-gradient-to-br from-primary/5 to-transparent px-4 py-4">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden />
+            Topic
+          </div>
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+            Type whatever you want a deep viral content &amp; marketing analysis on. That&apos;s it — hit{' '}
+            <span className="font-semibold text-foreground">Run</span> when you&apos;re ready.
+          </p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <label htmlFor="trigger-topic" className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            What do you want researched?
+          </label>
+          <Textarea
+            id="trigger-topic"
+            autoFocus
+            spellCheck
+            placeholder="e.g. hairloss, study abroad, AI productivity tools…"
+            className="mt-2 min-h-[120px] resize-y bg-background text-sm leading-relaxed"
+            value={topicVal}
+            onChange={(e) => setTopic(e.target.value)}
+          />
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            Available downstream as <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{`{{ topic }}`}</code>.
+            This field is sent when you hit Run — there is no separate topic box elsewhere.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

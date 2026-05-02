@@ -1,13 +1,13 @@
 {
   "id": "34f22547-87c0-43da-b06c-f0b8f83398e6",
-  "name": "avcm_classic-copy",
+  "name": "AVCM Viral Research & Content Pack",
   "nodes": [
     {
       "id": "in",
       "type": "trigger.input",
       "params": {
         "keys": [
-          "Anthropic"
+          "topic"
         ]
       },
       "position": {
@@ -16,37 +16,52 @@
       }
     },
     {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "params": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names — only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": {
+        "x": 220.0,
+        "y": 0.0
+      }
+    },
+    {
       "id": "reddit",
       "type": "source.reddit",
       "params": {
-        "subreddits_template": "{{ subreddits | default('Entrepreneur,SaaS,technology') }}",
-        "limit": 12
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
+        "limit": 15
       },
       "position": {
-        "x": 0.0,
-        "y": 90.0
+        "x": 460.0,
+        "y": -110.0
       }
     },
     {
       "id": "serper",
       "type": "source.serper",
       "params": {
-        "query_template": "{{ niche }} problems and trends"
+        "query_template": "{{ topic }} recent news launches product announcements breakthrough 2026"
       },
       "position": {
-        "x": 0.0,
-        "y": 180.0
+        "x": 460.0,
+        "y": 110.0
       }
     },
     {
       "id": "merge_signals",
       "type": "transform.template",
       "params": {
-        "template": "Niche: {{ niche }} | platforms: {{ platforms | default('twitter,linkedin') }}\nReddit highlights:\n{{ upstream['reddit']['text'] }}\nSerper summaries:\n{{ upstream['serper']['text'] }}"
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves — but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (“why this matters NOW for [audience]”) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
       },
       "position": {
-        "x": 220.0,
-        "y": 120.0
+        "x": 700.0,
+        "y": 0.0
       }
     },
     {
@@ -54,13 +69,13 @@
       "type": "agent.crewai",
       "params": {
         "role": "Audience Psychologist",
-        "goal": "Map emotional triggers and objections grounded in signals.",
-        "backstory": "Infer only from the supplied signal block.",
-        "task_description_template": "{{ upstream['merge_signals']['text'] }}",
-        "expected_output": "Short bullet memo: triggers | objections | language hooks per sub-theme."
+        "goal": "Map triggers and pains for '{{ topic }}' while highlighting what is **happening RIGHT NOW** in the niche (specific launches, debates, hype cycles) grounded only in signals.",
+        "backstory": "You specialize in tying audience emotion to timely context. Extract named companies, tools, milestones, headlines, launches, backlash, hype — only what's supported by Reddit/Serper text. Prefer recency cues (\"this month\", \"just dropped\") when signals support them.",
+        "task_description_template": "Topic: {{ topic }}\n\nResearch signals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce a memo that merges psychology WITH timeliness:\n- List 5-10 **recent-happening snippets** lifted from signals (bullet: event + Why people care).\nIf signals have no usable recent specifics, explicitly write \"Limited recent specificity in feeds\" and derive evergreen hooks.",
+        "expected_output": "Structured memo: (A) Timeline / \"what's buzzing now\" (bullets citing signal evidence), (B) Emotional triggers tied to those events, (C) Pain points/desires/objections grounded in snippets, (D) Hooks that mention real names/topics from signals when relevant, (E) Forbidden: invent launches or unnamed \"big news\"."
       },
       "position": {
-        "x": 420.0,
+        "x": 920.0,
         "y": 0.0
       }
     },
@@ -68,14 +83,14 @@
       "id": "angles",
       "type": "agent.crewai",
       "params": {
-        "role": "Content Strategist",
-        "goal": "Turn psychology into differentiated angles.",
-        "backstory": "Align angles with niche relevance only.",
-        "task_description_template": "Psych memo:\n{{ upstream['psych']['text'] }}",
-        "expected_output": "Numbered angles with suggested platform emphasis."
+        "role": "Viral Content Strategist",
+        "goal": "Design 6 differentiated angles for '{{ topic }}' each anchored where possible by a concrete **recent headline, launch, breakthrough, startup, regulation, viral thread, paper, benchmark, meme** from signals.",
+        "backstory": "You obsess over timeliness. People share what feels live in the Zeitgeist — not evergreen platitudes. You translate named events into story angles creators can riff on honestly.",
+        "task_description_template": "Topic: {{ topic }}\n\nAudience psychology + timeliness memo:\n{{ upstream['psych']['text'] }}\n\nDesign **6 viral content angles**. For each angle specify which specific **signal-backed fact/tool/brand/debate/person** it leans on. If insufficient fresh facts existed in your upstream memo, mark that angle clearly as evergreen-fallback rooted in Reddit language.",
+        "expected_output": "6 numbered angles, each with: (1) Title, (2) Linked recent fact/tool/launch (quoted from memo or omit if none), (3) Emotional lever, (4) Platforms, (5) Rating 1-10 + rationale."
       },
       "position": {
-        "x": 640.0,
+        "x": 1140.0,
         "y": 0.0
       }
     },
@@ -83,14 +98,14 @@
       "id": "copy",
       "type": "agent.crewai",
       "params": {
-        "role": "Copywriter",
-        "goal": "Draft native social copy snippets per angle.",
-        "backstory": "Keep hooks truthful to inputs.",
-        "task_description_template": "Angles brief:\n{{ upstream['angles']['text'] }}",
-        "expected_output": "Grouped draft lines per angle (~2 variations each)."
+        "role": "Viral Copywriter",
+        "goal": "Write punchy copy for '{{ topic }}' whose hooks **borrow specificity** — real product names, paper titles, Reddit drama, benchmarks, timelines — ONLY when justified by upstream angles/memes.",
+        "backstory": "You write like someone who scrolled the same Reddit + Google results as your audience yesterday. Insight density wins: one sharp named reference beats vague inspiration.",
+        "task_description_template": "Topic: {{ topic }}\n\nAngles (already tied to timeliness cues):\n{{ upstream['angles']['text'] }}\n\nFor each angle, write **2 variations**. Hooks must EITHER open with a concrete named recent detail from the memo OR deliberately say you're zooming evergreen if no fact fit — never invent news. Include a subtle \"why now\" framing when events exist.",
+        "expected_output": "Per angle → Variation A/B with platform labels: hook referencing specific named element when available, crisp body takeaway, conversational CTA. Flag any angle that had to stay evergreen-only."
       },
       "position": {
-        "x": 860.0,
+        "x": 1360.0,
         "y": 0.0
       }
     },
@@ -99,13 +114,13 @@
       "type": "agent.crewai",
       "params": {
         "role": "Creative Director",
-        "goal": "Add concise visual/format notes to each draft snippet.",
-        "backstory": "Suggest carousel/reel/static cues without hallucinating logos.",
-        "task_description_template": "Draft copy pack:\n{{ upstream['copy']['text'] }}",
-        "expected_output": "Annotated creative brief snippets."
+        "goal": "Make each '{{ topic }}' piece production-ready visually, emphasizing **screenshots, overlays, screenshots of headlines, carousel quotes, trending sound parity** around the factual hook used.",
+        "backstory": "Timely viral creative often LOOKS sourced — news grab, Reddit screenshot blurred, ticker-style text. You annotate how to SHOW the named fact without infringing (paraphrase, logo-free, fair-use awareness).",
+        "task_description_template": "Topic: {{ topic }}\n\nCopy pack:\n{{ upstream['copy']['text'] }}\n\nBrief each variation including how to VISUALLY cue recency/news (carousel slide with headline summary, screenshot-style frame, caption timestamp language, comparison table of tools, etc.).",
+        "expected_output": "Annotated pack: Format + Visual concept tying to factual hook when present + On-screen/caption specifics + pacing + compliance-friendly notes (don't fake UI)."
       },
       "position": {
-        "x": 1080.0,
+        "x": 1580.0,
         "y": 0.0
       }
     },
@@ -114,13 +129,13 @@
       "type": "agent.crewai",
       "params": {
         "role": "Performance Analyst",
-        "goal": "Rough score each snippet 0–100 plus one-line rationale (no tooling).",
-        "backstory": "Calibrated heuristics for hook sharpness only.",
-        "task_description_template": "Creative snippets with briefs:\n{{ upstream['creative_brief']['text'] }}",
-        "expected_output": "Table-like rankings with score and rationale per snippet."
+        "goal": "Score '{{ topic }}' variations with **bonus weight** for hooks anchored in verifiable recency/signaling from upstream work (without rewarding fabrication).",
+        "backstory": "You believe timely + truthful beats louder generic content. Reward specificity and \"shareable urgency\" grounded in briefing facts.",
+        "task_description_template": "Topic: {{ topic }}\n\nAnnotated content pack:\n{{ upstream['creative_brief']['text'] }}\n\nRank all variations — explicitly note timeliness/specific-signal leverage in each rationale (+5 to +15 mental bonus if hook clearly rides a documented event). Penalise vague sensationalism unrelated to briefing.",
+        "expected_output": "Markdown table: Rank | Variation | Score | Timeliness Lever (Y/N + detail) | Rationale | Best Platform | Risk note (fabrication/low evidence). Closing: top 3 to ship first referencing why recency resonates."
       },
       "position": {
-        "x": 1300.0,
+        "x": 1800.0,
         "y": 0.0
       }
     },
@@ -129,77 +144,84 @@
       "type": "output.pieces",
       "params": {},
       "position": {
-        "x": 1520.0,
+        "x": 2020.0,
         "y": 0.0
       }
     }
   ],
   "edges": [
     {
-      "id": "in-reddit-0",
+      "id": "in-subreddit_researcher-0",
       "source": "in",
+      "target": "subreddit_researcher",
+      "sourceHandle": null,
+      "targetHandle": null
+    },
+    {
+      "id": "subreddit_researcher-reddit-1",
+      "source": "subreddit_researcher",
       "target": "reddit",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "in-serper-1",
+      "id": "in-serper-2",
       "source": "in",
       "target": "serper",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "reddit-merge_signals-2",
+      "id": "reddit-merge_signals-3",
       "source": "reddit",
       "target": "merge_signals",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "serper-merge_signals-3",
+      "id": "serper-merge_signals-4",
       "source": "serper",
       "target": "merge_signals",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "merge_signals-psych-4",
+      "id": "merge_signals-psych-5",
       "source": "merge_signals",
       "target": "psych",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "psych-angles-5",
+      "id": "psych-angles-6",
       "source": "psych",
       "target": "angles",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "angles-copy-6",
+      "id": "angles-copy-7",
       "source": "angles",
       "target": "copy",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "copy-creative_brief-7",
+      "id": "copy-creative_brief-8",
       "source": "copy",
       "target": "creative_brief",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "creative_brief-score-8",
+      "id": "creative_brief-score-9",
       "source": "creative_brief",
       "target": "score",
       "sourceHandle": null,
       "targetHandle": null
     },
     {
-      "id": "score-out-9",
+      "id": "score-out-10",
       "source": "score",
       "target": "out",
       "sourceHandle": null,

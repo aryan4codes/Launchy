@@ -271,8 +271,11 @@ export function extractInputs(payload: unknown): Record<string, unknown> | null 
 
 const PACK_IDS = ["copy", "creative_brief", "score"] as const;
 const STRATEGY_IDS = ["psych", "angles"] as const;
+/** Agents whose job is to set up data for other nodes (e.g. subreddit discovery). */
+const RESEARCH_AGENT_IDS = ["subreddit_researcher"] as const;
 
 export type ResultsBoardPartition = {
+  researchAgents: NodeOutputBlock[];
   sources: NodeOutputBlock[];
   transforms: NodeOutputBlock[];
   strategyAgents: NodeOutputBlock[];
@@ -297,6 +300,13 @@ export function partitionResultsBoard(blocks: NodeOutputBlock[]): ResultsBoardPa
   }
 
   const byId = new Map(agents.map((a) => [a.nodeId, a]));
+
+  const researchAgents: NodeOutputBlock[] = [];
+  for (const id of RESEARCH_AGENT_IDS) {
+    const x = byId.get(id);
+    if (x) researchAgents.push(x);
+  }
+
   const deliverablesOrdered: NodeOutputBlock[] = [];
   for (const id of PACK_IDS) {
     const x = byId.get(id);
@@ -310,11 +320,12 @@ export function partitionResultsBoard(blocks: NodeOutputBlock[]): ResultsBoardPa
   }
 
   const used = new Set<string>(
-    [...deliverablesOrdered, ...strategyAgents].map((b) => b.nodeId),
+    [...researchAgents, ...deliverablesOrdered, ...strategyAgents].map((b) => b.nodeId),
   );
   const middleAgents = agents.filter((a) => !used.has(a.nodeId));
 
   return {
+    researchAgents,
     sources,
     transforms,
     strategyAgents,
@@ -327,7 +338,8 @@ export function partitionResultsBoard(blocks: NodeOutputBlock[]): ResultsBoardPa
 /** Phases shown in the horizontal pipeline strip. */
 export function pipelineStagesFromPartition(p: ResultsBoardPartition): string[] {
   const stages: string[] = [];
-  if (p.sources.length) stages.push("Signals");
+  if (p.researchAgents.length) stages.push("Topic research");
+  if (p.sources.length) stages.push("Community signals");
   if (p.transforms.length) stages.push("Fused context");
   if (p.strategyAgents.length) stages.push("Psychology map");
   if (p.middleAgents.length) stages.push("Angles & drafts");

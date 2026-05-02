@@ -1,6 +1,6 @@
 {
-  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
-  "name": "AVCM Viral Research & Content Pack",
+  "id": "87152855-6637-4015-b898-8649ea5a77bb",
+  "name": "avcm_classic-copy",
   "nodes": [
     {
       "id": "in",
@@ -11,7 +11,7 @@
         ]
       },
       "position": {
-        "x": 0.0,
+        "x": -2.323364485981301,
         "y": 0.0
       }
     },

@@ -1,6 +1,6 @@
 {
-  "id": "e92cee31-52f0-4316-af71-d7c54414a614",
-  "name": "AVCM Viral Research & Content Pack",
+  "id": "b8b4acb1-e182-40f4-aa90-2d40e6a6e7f5",
+  "name": "avcm_classic-copy",
   "nodes": [
     {
       "id": "in",
@@ -8,7 +8,8 @@
       "params": {
         "keys": [
           "topic"
-        ]
+        ],
+        "default_topic": "Agentic AI"
       },
       "position": {
         "x": 0.0,

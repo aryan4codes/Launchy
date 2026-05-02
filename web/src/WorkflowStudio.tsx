@@ -225,7 +225,14 @@ export default function WorkflowStudio() {
   const [runUi, setRunUi] = useState<Record<string, NodeRunUi>>({})
 
   const inputKeysArr = useMemo(() => inferWorkflowInputKeys(nodes), [nodes])
+  const keysForRunForm = useMemo(() => inputKeysArr.filter((k) => k !== 'topic'), [inputKeysArr])
   const keysSig = inputKeysArr.join('|')
+
+  const triggerDefaultTopic = useMemo(() => {
+    const trig = nodes.find((n) => (n.data as { wfType?: string }).wfType === 'trigger.input')
+    const dt = trig ? (trig.data as { default_topic?: unknown }).default_topic : undefined
+    return typeof dt === 'string' ? dt.trim() : ''
+  }, [nodes])
 
   const [inputsForm, setInputsForm] = useState<Record<string, string>>({})
 
@@ -234,7 +241,10 @@ export default function WorkflowStudio() {
     const keysLive = inferred.length ? inferred : inferWorkflowInputKeys(nodes)
     setInputsForm((prev) => {
       const n: Record<string, string> = {}
-      for (const k of keysLive) n[k] = prev[k] ?? ''
+      for (const k of keysLive) {
+        if (k === 'topic') continue
+        n[k] = prev[k] ?? ''
+      }
       return n
     })
   }, [keysSig, nodes])
@@ -363,7 +373,13 @@ export default function WorkflowStudio() {
     resetRunIndicators()
 
     let inputsBody = coerceInputsBody()
-    if (!Object.keys(inputsBody).length) inputsBody = { niche: inputsForm.niche?.trim() || 'general' }
+    delete inputsBody.topic
+    const topic = triggerDefaultTopic
+    if (!topic) {
+      window.alert('Please type your topic on the Topic step (the first node) before running.')
+      return
+    }
+    inputsBody.topic = topic
 
     const wid = await commitWorkflowToServer()
     if (!wid) return
@@ -497,7 +513,15 @@ export default function WorkflowStudio() {
           nodeIdsOrdered={exeOrderIds}
           nodeTypesById={nodeTypesById}
           nodeRunUi={runUi}
-          inputsSlot={<RunInputsForm keys={inputKeysArr} value={inputsForm} onChange={setInputsForm} />}
+          inputsSlot={
+            keysForRunForm.length ? (
+              <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Topic lives on the first step. Edit it there, then hit Run.
+              </p>
+            )
+          }
         />
       </div>
 
@@ -522,7 +546,13 @@ export default function WorkflowStudio() {
             />
           </TabsContent>
           <TabsContent value="inputs" className="max-h-[48vh] overflow-y-auto scrollbar-thin px-3 pb-4">
-            <RunInputsForm keys={inputKeysArr} value={inputsForm} onChange={setInputsForm} />
+            {keysForRunForm.length ? (
+              <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Topic lives on the first step. Edit it there, then hit Run.
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </div>

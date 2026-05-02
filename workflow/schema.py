@@ -63,6 +63,7 @@ class TriggerInputParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     keys: list[str] | None = None
+    default_topic: str | None = None
 
 
 class CrewAIParams(BaseModel):

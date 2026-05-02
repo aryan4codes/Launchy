@@ -1,4 +1,4 @@
-const apiPrefix = "";
+import { API_ORIGIN, apiUrl } from "@/lib/apiOrigin";
 
 export type WorkflowSpecJson = {
   id?: string | null;
@@ -24,21 +24,21 @@ async function j<T>(res: Response): Promise<T> {
 }
 
 export async function fetchNodeTypeSchemas(): Promise<Record<string, unknown>> {
-  return j(await fetch(`${apiPrefix}/workflows/node-types`));
+  return j(await fetch(apiUrl("/workflows/node-types")));
 }
 
 export async function listTemplates(): Promise<string[]> {
-  const r = await j<{ templates: string[] }>(await fetch(`${apiPrefix}/workflows/templates`));
+  const r = await j<{ templates: string[] }>(await fetch(apiUrl("/workflows/templates")));
   return r.templates;
 }
 
 export async function getTemplate(id: string): Promise<WorkflowSpecJson> {
-  return j(await fetch(`${apiPrefix}/workflows/templates/${encodeURIComponent(id)}`));
+  return j(await fetch(apiUrl(`/workflows/templates/${encodeURIComponent(id)}`)));
 }
 
 export async function cloneTemplate(templateId: string, name: string): Promise<WorkflowSpecJson> {
   return j(
-    await fetch(`${apiPrefix}/workflows/clone-template`, {
+    await fetch(apiUrl("/workflows/clone-template"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ template_id: templateId, name }),
@@ -47,17 +47,17 @@ export async function cloneTemplate(templateId: string, name: string): Promise<W
 }
 
 export async function listStoredWorkflows(): Promise<string[]> {
-  const r = await j<{ workflows: string[] }>(await fetch(`${apiPrefix}/workflows`));
+  const r = await j<{ workflows: string[] }>(await fetch(apiUrl("/workflows")));
   return r.workflows;
 }
 
 export async function getWorkflow(id: string): Promise<WorkflowSpecJson> {
-  return j(await fetch(`${apiPrefix}/workflows/${encodeURIComponent(id)}`));
+  return j(await fetch(apiUrl(`/workflows/${encodeURIComponent(id)}`)));
 }
 
 export async function createWorkflow(spec: WorkflowSpecJson): Promise<WorkflowSpecJson> {
   return j(
-    await fetch(`${apiPrefix}/workflows`, {
+    await fetch(apiUrl("/workflows"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -72,7 +72,7 @@ export async function createWorkflow(spec: WorkflowSpecJson): Promise<WorkflowSp
 export async function putWorkflow(id: string, spec: WorkflowSpecJson): Promise<WorkflowSpecJson> {
   const merged: WorkflowSpecJson = { ...spec, id };
   return j(
-    await fetch(`${apiPrefix}/workflows/${encodeURIComponent(id)}`, {
+    await fetch(apiUrl(`/workflows/${encodeURIComponent(id)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(merged),
@@ -85,7 +85,7 @@ export async function startWorkflowRun(
   inputs: Record<string, unknown>,
 ): Promise<{ run_id: string }> {
   return j(
-    await fetch(`${apiPrefix}/workflow-runs`, {
+    await fetch(apiUrl("/workflow-runs"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workflow_id: workflowId, inputs }),
@@ -94,10 +94,15 @@ export async function startWorkflowRun(
 }
 
 export async function getWorkflowRun(runId: string): Promise<unknown> {
-  return j(await fetch(`${apiPrefix}/workflow-runs/${encodeURIComponent(runId)}`));
+  return j(await fetch(apiUrl(`/workflow-runs/${encodeURIComponent(runId)}`)));
 }
 
 export function workflowRunWebSocketUrl(runId: string): string {
+  if (API_ORIGIN) {
+    const u = new URL(API_ORIGIN);
+    const proto = u.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${u.host}/workflow-runs/${encodeURIComponent(runId)}/ws`;
+  }
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${window.location.host}/workflow-runs/${encodeURIComponent(runId)}/ws`;
 }

@@ -10,6 +10,35 @@ import type { DisplayImageBlock } from "@/lib/runPayloadDisplay";
 import { ImageGallery } from "./ImageGallery";
 import { tryParseSerperJson, SearchResults } from "./SearchResults";
 
+/** Put long “JUSTIFICATION & NOTES” tails in a collapsible block for score / rank tables. */
+function splitScoreMarkdown(markdown: string): { body: string; justification: string | null } {
+  const md = markdown.trimEnd();
+  if (!md) return { body: markdown, justification: null };
+
+  const take = (idx: number): { body: string; justification: string } | null =>
+    idx > 0 ? { body: md.slice(0, idx).trimEnd(), justification: md.slice(idx).trimStart() } : null;
+
+  const heading = /^#{1,3}\s*JUSTIFICATION\b/im.exec(md);
+  if (heading?.index != null) {
+    const r = take(heading.index);
+    if (r) return { body: r.body, justification: r.justification };
+  }
+
+  const bold = /\*\*\s*JUSTIFICATION\s*&\s*NOTES?\s*\*\*/i.exec(md);
+  if (bold?.index != null) {
+    const r = take(bold.index);
+    if (r) return { body: r.body, justification: r.justification };
+  }
+
+  const loose = /\n\s*JUSTIFICATION\s*&\s*NOTES?\b/im.exec(md);
+  if (loose?.index != null) {
+    const r = take(loose.index);
+    if (r?.justification) return { body: r.body, justification: r.justification };
+  }
+
+  return { body: md, justification: null };
+}
+
 function useCopy(text: string) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -62,7 +91,11 @@ export function NodeOutputCard({
   };
   const tagColor = categoryColorMap[cat.category] ?? categoryColorMap.transform;
 
-  const serperData = markdown.trim() ? tryParseSerperJson(markdown) : null;
+  const scoreParts =
+    nodeId === "score" && markdown.trim() ? splitScoreMarkdown(markdown) : null;
+  const markdownBody = scoreParts?.body ?? markdown;
+
+  const serperData = markdownBody.trim() ? tryParseSerperJson(markdownBody) : null;
 
   // Subreddit list: comma-separated single-line strings with no spaces/markdown
   const isSubredditList =
@@ -151,16 +184,19 @@ export function NodeOutputCard({
       !!(markdown.trim() || images.length > 0) ? (
         <div className={cn(!suppressHeader && collapsible && "border-t border-border")}>
           {markdown.trim() ? (
-            <div className={cn("relative", compact ? "px-4 py-3" : "px-5 py-4")}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-3 top-3 z-10 h-7 gap-1 text-xs text-muted-foreground"
-                onClick={() => void copy()}
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
+            <div className={cn(compact ? "px-4 py-3" : "px-5 py-4")}>
+              <div className="mb-3 flex shrink-0 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 bg-background text-xs shadow-sm"
+                  onClick={() => void copy()}
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
               <div className={cn(markdownWrapperClass)}>
                 {subredditPills ? (
                   <div className="flex flex-wrap gap-2 py-1">
@@ -179,7 +215,19 @@ export function NodeOutputCard({
                 ) : serperData ? (
                   <SearchResults data={serperData} />
                 ) : (
-                  <MarkdownProse content={markdown} />
+                  <>
+                    <MarkdownProse content={markdownBody} />
+                    {scoreParts?.justification ? (
+                      <details className="mt-4 rounded-lg border border-border bg-muted/15 open:bg-muted/25">
+                        <summary className="cursor-pointer select-none rounded-lg px-3 py-2.5 text-sm font-semibold text-foreground hover:bg-muted/40">
+                          Justification & notes
+                        </summary>
+                        <div className="border-t border-border px-3 py-3">
+                          <MarkdownProse content={scoreParts.justification} />
+                        </div>
+                      </details>
+                    ) : null}
+                  </>
                 )}
               </div>
             </div>

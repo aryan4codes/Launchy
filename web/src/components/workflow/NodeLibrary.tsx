@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { ChevronDown, ChevronRight, FileStack, GripVertical, Layers } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,19 @@ import { CATEGORY_META, getCatalogEntry, groupCatalog, partitionTemplateIds, tem
 import { cn } from '@/lib/utils'
 
 const DND_MIME = 'application/vnd.launchy.node-type'
+
+/** Tailwind `xl` breakpoint — keep in sync with tailwind config default (1280px). */
+const XL_MEDIA = '(min-width: 1280px)'
+
+function subscribeXl(cb: () => void) {
+  const mq = window.matchMedia(XL_MEDIA)
+  mq.addEventListener('change', cb)
+  return () => mq.removeEventListener('change', cb)
+}
+
+function xlMatches(): boolean {
+  return window.matchMedia(XL_MEDIA).matches
+}
 
 function TemplateSidebarCard({
   tid,
@@ -47,6 +60,7 @@ export function NodeLibrary({
   onCloneTemplate,
   busy,
   initialBlocksCollapsed,
+  runDrawerExpanded,
   className,
 }: {
   onAdd: (wfType: string) => void
@@ -55,8 +69,22 @@ export function NodeLibrary({
   busy: boolean
   /** When true (empty canvas), blocks start collapsed below Templates. */
   initialBlocksCollapsed: boolean
+  /** Matches RunDrawer expanded — reserves matching vertical space so the library never covers progress. */
+  runDrawerExpanded: boolean
   className?: string
 }) {
+  const isXl = useSyncExternalStore(subscribeXl, xlMatches, () => false)
+  const asideBottom = useMemo(() => {
+    // Mirror RunDrawer max-height: collapsed 148px, expanded min(52vh, 420px).
+    const drawerH = runDrawerExpanded ? 'min(52vh, 420px)' : '148px'
+    const gap = '10px'
+    if (isXl) {
+      return `calc(${drawerH} + ${gap} + env(safe-area-inset-bottom, 0px))`
+    }
+    // Below xl, RunDrawer sits above the Inspector / Run inputs tabs — reserve typical tab strip + panel chrome.
+    return `calc(${drawerH} + min(46vh, 300px) + 4.5rem + env(safe-area-inset-bottom, 0px))`
+  }, [isXl, runDrawerExpanded])
+
   const groups = groupCatalog()
   const { general: generalTemplates, usecase: usecaseTemplates } = partitionTemplateIds(templates)
   const [templatesOpen, setTemplatesOpen] = useState(true)
@@ -70,13 +98,14 @@ export function NodeLibrary({
   return (
     <aside
       className={cn(
-        'pointer-events-none fixed left-2 top-[calc(4rem+env(safe-area-inset-top,0px))] z-[38] sm:left-3',
+        'pointer-events-none fixed left-2 top-[calc(4rem+env(safe-area-inset-top,0px))] z-[38] flex flex-col items-start sm:left-3',
         className,
       )}
+      style={{ bottom: asideBottom }}
     >
       <div
         className={cn(
-          'pointer-events-auto flex max-h-[calc(100dvh-6.25rem)] w-[min(272px,calc(100vw-1rem))] flex-col overflow-hidden',
+          'pointer-events-auto flex max-h-full min-h-0 w-[min(272px,calc(100vw-1rem))] max-w-[min(272px,calc(100vw-1rem))] flex-col overflow-y-auto scrollbar-thin',
           'rounded-2xl border border-border/75 bg-card/90 shadow-2xl shadow-black/15 backdrop-blur-xl',
           'dark:border-white/10 dark:bg-card/88 dark:shadow-black/40',
         )}
@@ -138,7 +167,7 @@ export function NodeLibrary({
         ) : null}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-b border-border xl:border-b-0">
+      <div className="flex shrink-0 flex-col overflow-hidden border-b border-border xl:border-b-0">
         <button
           type="button"
           aria-expanded={blocksOpen}
@@ -162,7 +191,7 @@ export function NodeLibrary({
         </button>
 
         {blocksOpen ? (
-          <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          <div className="scrollbar-thin max-h-[min(42vh,400px)] overflow-y-auto px-2 py-2">
             {groups.map(({ category, entries }) => {
               const cm = CATEGORY_META[category]
               return (

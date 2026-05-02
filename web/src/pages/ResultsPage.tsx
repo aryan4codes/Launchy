@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState, type Key } from "react";
 import { CopyTextButton } from "@/components/CopyTextButton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { NodeOutputCard } from "@/components/results/NodeOutputCard";
 import { ResultsPipelineStrip } from "@/components/results/ResultsPipelineStrip";
 import { getWorkflowRun } from "@/lib/api";
@@ -150,22 +151,26 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-full bg-background">
+      <div
+        className="min-h-full bg-background"
+        aria-busy="true"
+        aria-label="Loading run results"
+      >
         <div className="mx-auto max-w-7xl px-4 py-12">
-          <div className="h-8 w-56 animate-pulse rounded-md bg-muted" />
+          <Skeleton className="h-8 w-56 rounded-md" />
           <div className="mt-12 grid gap-4 lg:grid-cols-12">
-            <div className="lg:col-span-4 space-y-3">
+            <div className="space-y-3 lg:col-span-4">
               {[1, 2].map((i) => (
-                <div key={i} className="h-40 animate-pulse rounded-xl bg-muted/40" />
+                <Skeleton key={i} className="h-40 rounded-xl bg-muted/50" />
               ))}
             </div>
-            <div className="lg:col-span-8 grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2 lg:col-span-8">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 animate-pulse rounded-xl bg-muted/40" />
+                <Skeleton key={i} className="h-48 rounded-xl bg-muted/50" />
               ))}
             </div>
           </div>
-          <div className="mt-8 h-72 animate-pulse rounded-3xl bg-muted/30" />
+          <Skeleton className="mt-8 h-72 rounded-3xl bg-muted/40" />
         </div>
       </div>
     );
@@ -364,7 +369,13 @@ export default function ResultsPage() {
                 </div>
                 <div className="relative grid gap-6 xl:grid-cols-3">
                   {board.deliverablesOrdered.map((b) => (
-                    <div key={b.nodeId} className="flex min-h-[280px] flex-col rounded-2xl border-2 border-primary/20 bg-card shadow-md shadow-primary/5">
+                    <div
+                      key={b.nodeId}
+                      className={cn(
+                        "flex min-h-[280px] flex-col rounded-2xl border-2 border-primary/20 bg-card shadow-md shadow-primary/5",
+                        b.nodeId === "score" && "xl:col-span-3 xl:min-h-0",
+                      )}
+                    >
                       <div className="border-b border-border px-5 py-3">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
                           {b.nodeId}
@@ -373,7 +384,7 @@ export default function ResultsPage() {
                           {DELIVERABLE_TAGLINE[b.nodeId] ?? "Final workflow output"}
                         </p>
                       </div>
-                      <div className="flex-1">
+                      <div className={cn("flex-1", b.nodeId === "score" && "min-h-0")}>
                         <NodeOutputCard
                           nodeId={b.nodeId}
                           nodeType={b.nodeType}
@@ -381,7 +392,11 @@ export default function ResultsPage() {
                           images={b.images}
                           collapsible={false}
                           suppressHeader
-                          markdownWrapperClass="max-h-[min(70vh,640px)] overflow-y-auto scrollbar-thin"
+                          markdownWrapperClass={
+                            b.nodeId === "score"
+                              ? "max-h-[min(75vh,780px)] overflow-x-auto overflow-y-auto scrollbar-thin"
+                              : "max-h-[min(70vh,640px)] overflow-y-auto scrollbar-thin"
+                          }
                         />
                       </div>
                     </div>

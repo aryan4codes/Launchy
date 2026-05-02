@@ -26,6 +26,8 @@ import { WorkflowInspector } from '@/components/workflow/WorkflowInspector'
 import { deriveNodeExecOrder, RunDrawer } from '@/components/workflow/RunDrawer'
 import { RunUiProvider, type NodeRunUi } from '@/components/workflow/runUi'
 import { WorkflowTopBar } from '@/components/workflow/WorkflowTopBar'
+import { StudioSkeleton } from '@/components/workflow/StudioSkeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   cloneTemplate,
   createWorkflow,
@@ -58,10 +60,16 @@ function omitNonPersist(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 function specToFlow(spec: WorkflowSpecJson): { nodes: Node[]; edges: import('reactflow').Edge[] } {
+  // Base x starts at 320 so auto-positioned nodes clear the ~272px NodeLibrary panel.
+  // 280px horizontal / 160px vertical spacing prevents overlap for ~220px-wide nodes.
+  // Odd-indexed nodes stagger down 30px so parallel branches are visually distinct.
   const nodes: Node[] = spec.nodes.map((n, i) => ({
     id: n.id,
     type: 'wf',
-    position: n.position ?? { x: (i % 6) * 200, y: Math.floor(i / 6) * 120 },
+    position: n.position ?? {
+      x: 320 + (i % 6) * 280,
+      y: Math.floor(i / 6) * 160 + (i % 2) * 30,
+    },
     data: {
       wfType: n.type,
       label: n.id,
@@ -77,6 +85,12 @@ function specToFlow(spec: WorkflowSpecJson): { nodes: Node[]; edges: import('rea
     ...edgeDefaults,
   }))
   return { nodes, edges }
+}
+
+/** First node users typically configure: topic trigger, else first node in the graph. */
+function defaultConfigureNodeId(nodes: Node[]): string | null {
+  const trigger = nodes.find((n) => (n.data as WorkflowNodeData).wfType === 'trigger.input')
+  return trigger?.id ?? nodes[0]?.id ?? null
 }
 
 function flowToSpec(
@@ -153,6 +167,7 @@ function FlowCanvasDnD({
   setSelectedId,
   onConnect,
   onDropNode,
+  onInit: onInitProp,
 }: {
   nodes: Node[]
   edges: import('reactflow').Edge[]
@@ -161,6 +176,7 @@ function FlowCanvasDnD({
   setSelectedId: (id: string | null) => void
   onConnect: (c: Connection) => void
   onDropNode: (wfType: string, pos: { x: number; y: number }) => void
+  onInit?: (inst: ReactFlowInstance) => void
 }) {
   const rfRef = useRef<ReactFlowInstance | null>(null)
 
@@ -196,6 +212,7 @@ function FlowCanvasDnD({
       maxZoom={1.6}
       onInit={(inst) => {
         rfRef.current = inst
+        onInitProp?.(inst)
       }}
       onNodeClick={(_, n) => setSelectedId(n.id)}
       onPaneClick={() => setSelectedId(null)}
@@ -227,7 +244,12 @@ export default function WorkflowStudio() {
   const [runPayload, setRunPayload] = useState<unknown>(null)
   const [drawerExpanded, setDrawerExpanded] = useState(false)
   const [inspectorOpen, setInspectorOpen] = useState(true)
+  const [mobileStudioTab, setMobileStudioTab] = useState<'inspector' | 'inputs'>('inspector')
   const [runUi, setRunUi] = useState<Record<string, NodeRunUi>>({})
+  const [studioReady, setStudioReady] = useState(false)
+  const [openingWorkflow, setOpeningWorkflow] = useState(false)
+
+  const rfInstanceRef = useRef<ReactFlowInstance | null>(null)
 
   const inputKeysArr = useMemo(() => inferWorkflowInputKeys(nodes), [nodes])
   const keysForRunForm = useMemo(() => inputKeysArr.filter((k) => k !== 'topic'), [inputKeysArr])
@@ -255,9 +277,34 @@ export default function WorkflowStudio() {
   }, [keysSig, nodes])
 
   useEffect(() => {
-    fetchNodeTypeSchemas().then(setSchemas).catch(console.error)
-    listTemplates().then(setTemplates).catch(console.error)
-    listStoredWorkflows().then(setStored).catch(console.error)
+    let cancelled = false
+    void Promise.all([
+      fetchNodeTypeSchemas().catch((e) => {
+        console.error(e)
+        return {} as Record<string, unknown>
+      }),
+      listTemplates().catch((e) => {
+        console.error(e)
+        return [] as string[]
+      }),
+      listStoredWorkflows().catch((e) => {
+        console.error(e)
+        return [] as string[]
+      }),
+    ])
+      .then(([s, t, w]) => {
+        if (!cancelled) {
+          setSchemas(s)
+          setTemplates(t)
+          setStored(w)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setStudioReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const commitWorkflowToServer = useCallback(async (): Promise<string | undefined> => {
@@ -287,15 +334,26 @@ export default function WorkflowStudio() {
 
   const loadId = useCallback(
     async (id: string) => {
-      const spec = await getWorkflow(id)
-      const { nodes: n, edges: ed } = specToFlow(spec)
-      setNodes(n)
-      setEdges(ed)
-      setWorkflowId(spec.id ?? id)
-      setName(spec.name)
-      setSelectedId(null)
-      setRunPayload(null)
-      setRunUi({})
+      setOpeningWorkflow(true)
+      try {
+        const spec = await getWorkflow(id)
+        const { nodes: n, edges: ed } = specToFlow(spec)
+        setNodes(n)
+        setEdges(ed)
+        setWorkflowId(spec.id ?? id)
+        setName(spec.name)
+        setSelectedId(defaultConfigureNodeId(n))
+        setInspectorOpen(true)
+        setMobileStudioTab('inspector')
+        setRunPayload(null)
+        setRunUi({})
+        setTimeout(() => rfInstanceRef.current?.fitView({ padding: 0.15 }), 150)
+      } catch (e) {
+        console.error(e)
+        window.alert(e instanceof Error ? e.message : 'Could not open that workflow.')
+      } finally {
+        setOpeningWorkflow(false)
+      }
     },
     [setNodes, setEdges],
   )
@@ -332,8 +390,11 @@ export default function WorkflowStudio() {
         setEdges(ed)
         setWorkflowId(spec.id ?? undefined)
         setName(spec.name)
-        setSelectedId(null)
+        setSelectedId(defaultConfigureNodeId(n))
+        setInspectorOpen(true)
+        setMobileStudioTab('inspector')
         setStored(await listStoredWorkflows())
+        setTimeout(() => rfInstanceRef.current?.fitView({ padding: 0.15 }), 150)
       } finally {
         setBusy(false)
       }
@@ -442,11 +503,19 @@ export default function WorkflowStudio() {
   )
   const nodeTypesById = useMemo(() => Object.fromEntries(nodes.map((n) => [n.id, (n.data as WorkflowNodeData).wfType])), [nodes])
 
+  if (!studioReady) {
+    return (
+      <div className="h-screen min-h-0 bg-background selection:bg-primary/25 selection:text-foreground dark:selection:bg-emerald-500/30 dark:selection:text-emerald-50">
+        <StudioSkeleton />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background selection:bg-primary/25 selection:text-foreground dark:selection:bg-emerald-500/30 dark:selection:text-emerald-50">
       <WorkflowTopBar
         name={name}
-        busy={busy}
+        busy={busy || openingWorkflow}
         onNameChange={setName}
         onSave={() => void saveWithSpinner()}
         stored={stored}
@@ -455,24 +524,25 @@ export default function WorkflowStudio() {
         onLoadSaved={(id) => void loadId(id)}
         onCloneTemplate={(tid) => void onCloneTemplateCb(tid)}
         onRun={() => void runWorkflow()}
-        canRun={nodes.length > 0}
+        canRun={nodes.length > 0 && !openingWorkflow}
       />
 
       {/*
         Floating NodeLibrary (fixed) leaves the canvas full-bleed on the left.
-        xl: canvas + inspector; Run drawer under canvas column only.
+        xl: canvas + inspector share the upper band; Run drawer spans full width below both.
       */}
       <NodeLibrary
         key={`${workflowId ?? 'draft'}-${nodes.length > 0 ? 'filled' : 'empty'}`}
         templates={templates}
-        busy={busy}
+        busy={busy || openingWorkflow}
         onCloneTemplate={(tid) => void onCloneTemplateCb(tid)}
         initialBlocksCollapsed={nodes.length === 0}
+        runDrawerExpanded={drawerExpanded}
         onAdd={(wfType) => addNodeAtPosition(wfType, { x: 180 + nodes.length * 18, y: 120 + nodes.length * 16 })}
       />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {/* Main row: canvas + run drawer (mobile: column; xl: canvas column + inspector rail) */}
+        {/* Upper band: canvas + inspector (desktop); canvas only on small screens */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <div
@@ -491,43 +561,43 @@ export default function WorkflowStudio() {
                   setSelectedId={setSelectedId}
                   onConnect={onConnect}
                   onDropNode={addNodeAtPosition}
+                  onInit={(inst) => { rfInstanceRef.current = inst }}
                 />
               </RunUiProvider>
               {nodes.length === 0 ? (
-                <EmptyCanvasOverlay templates={templates} busy={busy} onCloneTemplate={(tid) => void onCloneTemplateCb(tid)} />
+                <EmptyCanvasOverlay
+                  templates={templates}
+                  busy={busy || openingWorkflow}
+                  onCloneTemplate={(tid) => void onCloneTemplateCb(tid)}
+                />
+              ) : null}
+              {openingWorkflow ? (
+                <div
+                  className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-background/75 px-6 backdrop-blur-[2px]"
+                  role="status"
+                  aria-live="polite"
+                  aria-label="Loading workflow"
+                >
+                  <p className="text-center text-sm font-medium text-muted-foreground">Opening workflow…</p>
+                  <div className="grid w-full max-w-md grid-cols-3 gap-3">
+                    {Array.from({ length: 6 }, (_, i) => (
+                      <Skeleton key={i} className="h-24 rounded-lg bg-muted/60" />
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
-
-            <RunDrawer
-              expanded={drawerExpanded}
-              onToggleExpanded={() => setDrawerExpanded((v) => !v)}
-              runLogText={runLogLines.join('\n\n')}
-              runPayload={runPayload}
-              busy={busy}
-              nodeIdsOrdered={exeOrderIds}
-              nodeTypesById={nodeTypesById}
-              nodeRunUi={runUi}
-              inputsSlot={
-                keysForRunForm.length ? (
-                  <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Topic lives on the first step. Edit it there, then hit Run.
-                  </p>
-                )
-              }
-            />
           </div>
 
-          {/* Inspector: slides off to the right when collapsed (desktop only) */}
+          {/* Inspector: desktop rail; ends above full-width progress drawer */}
           <div
             className={cn(
               'relative hidden shrink-0 overflow-hidden border-l border-border bg-muted/10 transition-[width] duration-300 ease-out xl:block',
-              inspectorOpen ? 'w-[380px]' : 'w-0 border-l-transparent',
+              inspectorOpen ? 'w-[340px]' : 'w-0 border-l-transparent',
             )}
           >
-            <aside className="flex h-full w-[380px] min-w-[380px] flex-col">
-              <div className="flex shrink-0 items-start gap-2 border-b border-border bg-card/70 px-2 py-2 pl-1">
+            <aside className="flex h-full w-[340px] min-w-[340px] flex-col">
+              <div className="flex shrink-0 items-start gap-2 border-b border-border bg-card/70 px-2 py-1.5 pl-1">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -543,12 +613,15 @@ export default function WorkflowStudio() {
                 </Button>
                 <div className="min-w-0 flex-1 py-0.5">
                   <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Inspector</h2>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Plain-language fields per step. Open collapsible sections when a block exposes optional tuning.
+                  <p className="line-clamp-2 text-[10px] leading-snug text-muted-foreground">
+                    Fields per step; open optional sections when a block exposes tuning.
                   </p>
                 </div>
               </div>
-              <div id="workflow-inspector-panel" className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div
+                id="workflow-inspector-panel"
+                className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto"
+              >
                 <WorkflowInspector
                   workflowId={workflowId}
                   selectedId={selectedId}
@@ -561,6 +634,26 @@ export default function WorkflowStudio() {
             </aside>
           </div>
         </div>
+
+        <RunDrawer
+          expanded={drawerExpanded}
+          onToggleExpanded={() => setDrawerExpanded((v) => !v)}
+          runLogText={runLogLines.join('\n\n')}
+          runPayload={runPayload}
+          busy={busy || openingWorkflow}
+          nodeIdsOrdered={exeOrderIds}
+          nodeTypesById={nodeTypesById}
+          nodeRunUi={runUi}
+          inputsSlot={
+            keysForRunForm.length ? (
+              <RunInputsForm keys={keysForRunForm} value={inputsForm} onChange={setInputsForm} />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Topic lives on the first step. Edit it there, then hit Run.
+              </p>
+            )
+          }
+        />
 
         {!inspectorOpen ? (
           <Button
@@ -584,7 +677,11 @@ export default function WorkflowStudio() {
       </div>
 
       <div className="border-t border-border bg-card/80 xl:hidden">
-        <Tabs defaultValue="inspector" className="w-full">
+        <Tabs
+          value={mobileStudioTab}
+          onValueChange={(v) => setMobileStudioTab(v === 'inputs' ? 'inputs' : 'inspector')}
+          className="w-full"
+        >
           <TabsList className="m-3 mx-auto grid w-[min(100%,28rem)] grid-cols-2">
             <TabsTrigger value="inspector" className="text-xs">
               Inspector

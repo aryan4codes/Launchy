@@ -17,3 +17,5 @@ memory/performance_db/*
 
 /outputs
 .vercel
+
+/workflows/stored

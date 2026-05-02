@@ -26,8 +26,8 @@ export function MarkdownProse({
             </a>
           ),
           table: ({ children, ...rest }) => (
-            <div className="overflow-x-auto my-3">
-              <table className="w-full text-sm border-collapse" {...rest}>
+            <div className="-mx-1 my-3 overflow-x-auto px-1">
+              <table className="w-full min-w-max border-collapse text-sm" {...rest}>
                 {children}
               </table>
             </div>

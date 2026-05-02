@@ -272,11 +272,57 @@ export function groupCatalog(): Array<{
     .filter((g) => g.entries.length > 0);
 }
 
+export type TemplateCatalogCategory = "general" | "usecase";
+
 export interface TemplateMeta {
   id: string;
   label: string;
   description: string;
   badge?: string;
+  category?: TemplateCatalogCategory;
+}
+
+const GENERAL_TEMPLATE_ORDER: readonly string[] = [
+  "avcm_classic",
+  "avcm_with_images",
+  "research_only",
+  "tweet_only",
+];
+
+const USECASE_TEMPLATE_ORDER: readonly string[] = [
+  "saas_launch",
+  "personal_brand",
+  "ecommerce",
+  "youtube",
+  "competitor_teardown",
+];
+
+function sortIdsWithPreferredOrder(ids: string[], preferred: readonly string[]): string[] {
+  const pick = new Set(ids);
+  const out: string[] = [];
+  for (const id of preferred) {
+    if (pick.has(id)) out.push(id);
+  }
+  const rest = ids.filter((id) => !out.includes(id)).sort((a, b) => a.localeCompare(b));
+  return [...out, ...rest];
+}
+
+/** Split API template ids into UI groups; unknown templates default to `general`. */
+export function partitionTemplateIds(remoteIds: string[]): {
+  general: string[];
+  usecase: string[];
+} {
+  const usecase: string[] = [];
+  const general: string[] = [];
+  for (const id of remoteIds) {
+    const cat = templateMeta(id).category ?? "general";
+    if (cat === "usecase") usecase.push(id);
+    else general.push(id);
+  }
+  return {
+    general: sortIdsWithPreferredOrder(general, GENERAL_TEMPLATE_ORDER),
+    usecase: sortIdsWithPreferredOrder(usecase, USECASE_TEMPLATE_ORDER),
+  };
 }
 
 export const TEMPLATE_META: Record<string, TemplateMeta> = {
@@ -286,21 +332,55 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     description:
       "Reddit + Serper signals → psych → angles → copy → creative brief → score.",
     badge: "Recommended",
+    category: "general",
   },
   avcm_with_images: {
     id: "avcm_with_images",
     label: "AVCM with images",
-    description: "Classic flow plus Gemini image generation per piece.",
+    description: "Topic → hero-image concept pipeline (GPT image).",
+    category: "general",
   },
   research_only: {
     id: "research_only",
     label: "Research only",
-    description: "Just the signal-gathering half of the pipeline.",
+    description: "Subreddit discovery + Reddit + web search signals only.",
+    category: "general",
   },
   tweet_only: {
     id: "tweet_only",
     label: "Tweet draft",
-    description: "Minimal flow that drafts a single tweet from a niche.",
+    description: "One timely tweet draft from your topic—no wiring required.",
+    category: "general",
+  },
+  saas_launch: {
+    id: "saas_launch",
+    label: "SaaS Product Launch",
+    description: "Launch psychology, demos, traction hooks, PH/LI/X cadence—all from topic + signals.",
+    category: "usecase",
+  },
+  personal_brand: {
+    id: "personal_brand",
+    label: "Personal Brand Growth",
+    description: "Authority angles, LinkedIn + X drafts, credibility hooks from audience language.",
+    category: "usecase",
+  },
+  ecommerce: {
+    id: "ecommerce",
+    label: "E-commerce / D2C",
+    description: "UGC angles, PAS/AIDA conversions, Meta + TikTok + email stubs from shopper signals.",
+    category: "usecase",
+  },
+  youtube: {
+    id: "youtube",
+    label: "YouTube Content Strategy",
+    description: "Titles, thumbnails, beat sheets, Shorts—from retention-first packaging prompts.",
+    category: "usecase",
+  },
+  competitor_teardown: {
+    id: "competitor_teardown",
+    label: "Competitor Teardown",
+    description: "C.A.R.D.-style intel, gap angles, balanced counter-positioning copy.",
+    category: "usecase",
   },
 };
 
@@ -310,6 +390,7 @@ export function templateMeta(id: string): TemplateMeta {
       id,
       label: id,
       description: "Template",
+      category: "general",
     }
   );
 }

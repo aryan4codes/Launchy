@@ -1,0 +1,198 @@
+{
+  "id": "saas_launch",
+  "name": "SaaS Product Launch",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {
+        "keys": [
+          "topic"
+        ]
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names \u2014 only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": {
+        "x": 220,
+        "y": 0
+      }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
+        "limit": 15
+      },
+      "position": {
+        "x": 460,
+        "y": -110
+      }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": {
+        "query_template": "{{ topic }} product launch announcement beta release fundraising 2026"
+      },
+      "position": {
+        "x": 460,
+        "y": 110
+      }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "data": {
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves \u2014 but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (\u201cwhy this matters NOW for [audience]\u201d) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
+      },
+      "position": {
+        "x": 700,
+        "y": 0
+      }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "data": {
+        "role": "SaaS Launch Psychologist",
+        "goal": "Map triggers for '{{ topic }}' SaaS launches: early-adopter FOMO, founder-story resonance, demo excitement, pricing objections \u2014 only from Reddit/Serper signals.",
+        "backstory": "You studied thousands of SaaS launch patterns. Problem \u2192 Solution \u2192 Benefit \u2192 CTA is your lens. Tie emotion to launches, traction milestones, beta scarcity \u2014 never invent numbers.",
+        "task_description_template": "Topic (product/category): {{ topic }}\n\nResearch signals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce memo: (A) 5\u201310 bullets: event/snippet + why buyers care\n(B) Launch psychology: objections, urgency levers from snippets\n(C) If weak recency say 'Limited recent specificity' then evergreen pains.",
+        "expected_output": "Structured memo: (A) Buzzing now, (B) Triggers/objections grounded in snippets, (C) Forbidden fabricated funding/user counts."
+      },
+      "position": {
+        "x": 920,
+        "y": 0
+      }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Product Launch Strategist",
+        "goal": "Six differentiated **launch angles** for '{{ topic }}' using demos, founder narratives, milestones, bundles, beta proof.",
+        "backstory": "You blueprint launches that pattern-match viral SaaS announces: polished demo hooks, templates-as-launch, traction reveals.",
+        "task_description_template": "Topic: {{ topic }}\n\nMemo:\n{{ upstream['psych']['text'] }}\n\nDesign **6 angles** covering: (1) Demo hook (2) Free template/resource bundle (3) Founder origin (4) Milestone traction (5) Beta/customer quote (6) BTS build. Each cites one signal-backed fact/tool or marks evergreen fallback.",
+        "expected_output": "6 numbered angles: Title | Signal anchor or evergreen note | Emotional lever | Channels (PH/LI/X) | Score 1-10 + rationale."
+      },
+      "position": {
+        "x": 1140,
+        "y": 0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Launch Copywriter",
+        "goal": "Hook\u2013Problem\u2013Solution\u2013CTA copy for '{{ topic }}' launches with pattern interrupt / curiosity gap hooks.",
+        "backstory": "You write Product Hunt blurbs and founder LinkedIn arcs; specificity over hype unless sourced.",
+        "task_description_template": "Topic: {{ topic }}\n\nAngles:\n{{ upstream['angles']['text'] }}\n\nPer angle: **two variations** labeled Product Hunt (~60 words), LinkedIn (~150\u2013260 words), X (<280 chars). Add launch-week cadence: Day0 hero, Day3 proof, Day7 recap. Named facts only when in upstream memo.",
+        "expected_output": "Per angle A/B splits with platform labels + cadence + evergreen flags."
+      },
+      "position": {
+        "x": 1360,
+        "y": 0
+      }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Launch Creative Director",
+        "goal": "Creative execution for '{{ topic }}': demo boards, carousel frames, selfie+caption founders.",
+        "backstory": "Show the launch promise visually \u2014 headline-style overlays, roadmap snippet sketches, compliant paraphrasing.",
+        "task_description_template": "Topic: {{ topic }}\n\nCopy:\n{{ upstream['copy']['text'] }}\n\nFor each variation outline shot list / carousel slides tying to factual hooks.",
+        "expected_output": "Annotated visuals: format, on-screen copy, pacing, compliance note."
+      },
+      "position": {
+        "x": 1580,
+        "y": 0
+      }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Launch Performance Analyst",
+        "goal": "Score '{{ topic }}' pack; bump hooks with evidenced why-now and traction language.",
+        "backstory": "Reward truthful urgency; penalize vague hype or fabricated stats.",
+        "task_description_template": "Topic: {{ topic }}\n\nPack:\n{{ upstream['creative_brief']['text'] }}\n\nRank with timeliness bonus only when evidenced.",
+        "expected_output": "Markdown table rankings + rationale + Top 3 to ship referencing recency traction."
+      },
+      "position": {
+        "x": 1800,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": {
+        "x": 2020,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "in",
+      "target": "subreddit_researcher"
+    },
+    {
+      "source": "subreddit_researcher",
+      "target": "reddit"
+    },
+    {
+      "source": "in",
+      "target": "serper"
+    },
+    {
+      "source": "reddit",
+      "target": "merge_signals"
+    },
+    {
+      "source": "serper",
+      "target": "merge_signals"
+    },
+    {
+      "source": "merge_signals",
+      "target": "psych"
+    },
+    {
+      "source": "psych",
+      "target": "angles"
+    },
+    {
+      "source": "angles",
+      "target": "copy"
+    },
+    {
+      "source": "copy",
+      "target": "creative_brief"
+    },
+    {
+      "source": "creative_brief",
+      "target": "score"
+    },
+    {
+      "source": "score",
+      "target": "out"
+    }
+  ]
+}

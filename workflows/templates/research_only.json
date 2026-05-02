@@ -5,33 +5,50 @@
     {
       "id": "in",
       "type": "trigger.input",
-      "data": {},
+      "data": {
+        "keys": ["topic"]
+      },
       "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names — only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": { "x": 220, "y": 0 }
     },
     {
       "id": "reddit",
       "type": "source.reddit",
       "data": {
-        "subreddits_template": "{{ subreddits | default('AskReddit,technology,SaaS') }}",
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
         "limit": 12
       },
-      "position": { "x": 220, "y": -40 }
+      "position": { "x": 460, "y": -40 }
     },
     {
       "id": "serper",
       "type": "source.serper",
-      "data": { "query_template": "{{ niche }} trends and discussions" },
-      "position": { "x": 220, "y": 80 }
+      "data": {
+        "query_template": "{{ topic }} recent news launches product announcements breakthrough trends 2026"
+      },
+      "position": { "x": 460, "y": 80 }
     },
     {
       "id": "out",
       "type": "output.pieces",
       "data": {},
-      "position": { "x": 460, "y": 20 }
+      "position": { "x": 700, "y": 20 }
     }
   ],
   "edges": [
-    { "id": "e1", "source": "in", "target": "reddit", "sourceHandle": null, "targetHandle": null },
+    { "id": "e0", "source": "in", "target": "subreddit_researcher", "sourceHandle": null, "targetHandle": null },
+    { "id": "e1", "source": "subreddit_researcher", "target": "reddit", "sourceHandle": null, "targetHandle": null },
     { "id": "e2", "source": "in", "target": "serper", "sourceHandle": null, "targetHandle": null },
     { "id": "e3", "source": "reddit", "target": "out", "sourceHandle": null, "targetHandle": null },
     { "id": "e4", "source": "serper", "target": "out", "sourceHandle": null, "targetHandle": null }

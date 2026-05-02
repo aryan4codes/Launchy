@@ -1,0 +1,198 @@
+{
+  "id": "ecommerce",
+  "name": "E-commerce / D2C viral pack",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {
+        "keys": [
+          "topic"
+        ]
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names \u2014 only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": {
+        "x": 220,
+        "y": 0
+      }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
+        "limit": 15
+      },
+      "position": {
+        "x": 460,
+        "y": -110
+      }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": {
+        "query_template": "{{ topic }} product reviews unboxing D2C influencer marketing shoppers 2026"
+      },
+      "position": {
+        "x": 460,
+        "y": 110
+      }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "data": {
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves \u2014 but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (\u201cwhy this matters NOW for [audience]\u201d) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
+      },
+      "position": {
+        "x": 700,
+        "y": 0
+      }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "data": {
+        "role": "D2C Consumer Psychologist",
+        "goal": "Buyer psychology map for '{{ topic }}' commerce: PAS + AIDA signals from communities.",
+        "backstory": "You dissect purchase anxiety, social proof cravings, scarcity ethics, transformations \u2014 always cite verbatim sentiment.",
+        "task_description_template": "Product/category topic: {{ topic }}\n\nSignals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce memo tying emotions to verbatim quotes plus objection inventory.",
+        "expected_output": "Structured memo highlighting triggers, FAQs, shopper language, forbidden invented SKUs/prices."
+      },
+      "position": {
+        "x": 920,
+        "y": 0
+      }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "data": {
+        "role": "E\u2011commerce Content Strategist",
+        "goal": "Six scroll-stopping angles for '{{ topic }}': UGC, transformations, objections, scarcity, storytelling.",
+        "backstory": "Blend unboxing fantasies with honest critiques; align with TikTok/Reels pacing.",
+        "task_description_template": "Topic: {{ topic }}\n\nMemo:\n{{ upstream['psych']['text'] }}\n\nAngles must cover UGC rave, before/after, '3 mistakes' hook, testimonial collage, scarcity promo storytelling, founders-why-built-this.",
+        "expected_output": "6 numbered angles referencing shopper evidence + recommended format (vertical, carousel)."
+      },
+      "position": {
+        "x": 1140,
+        "y": 0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "data": {
+        "role": "DTC Copywriter",
+        "goal": "Benefit-led copy stacks for '{{ topic }}' spanning Meta ads, TikTok 15s, IG carousel captions, abandonment email stubs.",
+        "backstory": "PAS + comparison teardowns + objection reassurance; include >=1 tangible number per variant when truthful.",
+        "task_description_template": "Topic: {{ topic }}\n\nAngles:\n{{ upstream['angles']['text'] }}\n\nPer angle craft Meta primary text (~90 words max), TikTok VO script (~15s), carousel hook line, abandonment email teaser (2 sentences).",
+        "expected_output": "Labeled copy blocks emphasizing benefits + proofs + CTA variety."
+      },
+      "position": {
+        "x": 1360,
+        "y": 0
+      }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "data": {
+        "role": "DTC Creative Director",
+        "goal": "Thumb-stopping visuals for '{{ topic }}' with overlays, SKU-friendly props, captions under 90 chars on-frame.",
+        "backstory": "Vertical-first muted viewing, bold kinetic text for first 2 seconds, realistic product-in-use setups.",
+        "task_description_template": "Topic: {{ topic }}\n\nCopy:\n{{ upstream['copy']['text'] }}\n\nStoryboard overlays + carousel slide titles.",
+        "expected_output": "Shot lists + typography guidance + authenticity notes."
+      },
+      "position": {
+        "x": 1580,
+        "y": 0
+      }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Commerce Performance Analyst",
+        "goal": "Score '{{ topic }}' assets for urgency + proof fidelity; downgrade generic fluff.",
+        "backstory": "Reward verbatim social proof echoes; penalize 'premium quality' filler.",
+        "task_description_template": "Topic: {{ topic }}\n\nCreative:\n{{ upstream['creative_brief']['text'] }}\n\nRank with proof badges.",
+        "expected_output": "Markdown rank table referencing proof + scarcity ethics."
+      },
+      "position": {
+        "x": 1800,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": {
+        "x": 2020,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "in",
+      "target": "subreddit_researcher"
+    },
+    {
+      "source": "subreddit_researcher",
+      "target": "reddit"
+    },
+    {
+      "source": "in",
+      "target": "serper"
+    },
+    {
+      "source": "reddit",
+      "target": "merge_signals"
+    },
+    {
+      "source": "serper",
+      "target": "merge_signals"
+    },
+    {
+      "source": "merge_signals",
+      "target": "psych"
+    },
+    {
+      "source": "psych",
+      "target": "angles"
+    },
+    {
+      "source": "angles",
+      "target": "copy"
+    },
+    {
+      "source": "copy",
+      "target": "creative_brief"
+    },
+    {
+      "source": "creative_brief",
+      "target": "score"
+    },
+    {
+      "source": "score",
+      "target": "out"
+    }
+  ]
+}

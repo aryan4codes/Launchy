@@ -5,7 +5,9 @@
     {
       "id": "in",
       "type": "trigger.input",
-      "data": {},
+      "data": {
+        "keys": ["topic"]
+      },
       "position": { "x": 0, "y": 0 }
     },
     {
@@ -13,9 +15,9 @@
       "type": "agent.crewai",
       "data": {
         "role": "Senior Social Copywriter",
-        "goal": "Write punchy tweets that fit the niche and platform tone.",
-        "backstory": "You write only from user inputs without inventing factual claims.",
-        "task_description_template": "Niche: {{ niche }}\nPlatforms: {{ platforms | default('twitter') }}\nDraft exactly one standalone tweet under 280 characters with a gripping hook.",
+        "goal": "Write punchy tweets for '{{ topic }}' with a gripping hook — prefer angles that feel timely (recent launches, debates, milestones) without inventing facts.",
+        "backstory": "You write from the user's topic only. Never invent headlines, metrics, or product names not supplied in the brief. Use curiosity and pattern interrupts; if you cite something specific, phrase it hypothetically unless the prompt gives exact facts.",
+        "task_description_template": "Topic: {{ topic }}\nPlatforms: {{ platforms | default('twitter') }}\n\nTASK:\nDraft exactly **one standalone tweet** under 280 characters.\n\nREQUIREMENTS:\n- Hook in the first ~20 words (scroll-stop).\n- Optional: weave a \"why now\" curiosity angle for '{{ topic }}' (trend chatter, urgency) without fake news.\n- No hashtags clutter; at most one if it fits organically.\n- End with implication or provocative line — not \"thoughts?\" fluff.\n\nOUTPUT: Tweet body only, no preamble.",
         "expected_output": "The tweet body only, no preamble."
       },
       "position": { "x": 280, "y": 0 }

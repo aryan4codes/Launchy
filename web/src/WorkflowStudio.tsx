@@ -459,7 +459,12 @@ export default function WorkflowStudio() {
       */}
       <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden xl:grid-cols-[260px_minmax(0,1fr)_380px] xl:grid-rows-[minmax(0,1fr)_auto]">
         <NodeLibrary
+          key={`${workflowId ?? 'draft'}-${nodes.length > 0 ? 'filled' : 'empty'}`}
           className="min-h-0 overflow-hidden xl:row-span-2"
+          templates={templates}
+          busy={busy}
+          onCloneTemplate={(tid) => void onCloneTemplateCb(tid)}
+          initialBlocksCollapsed={nodes.length === 0}
           onAdd={(wfType) => addNodeAtPosition(wfType, { x: 180 + nodes.length * 18, y: 120 + nodes.length * 16 })}
         />
 

@@ -12,8 +12,8 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from workflow.engine import WorkflowEngine
 from workflow.schema import WorkflowRunCreate
 
-from api.deps import workflow_hub_singleton
-from api.workflow_storage import load_workflow
+from http_api.deps import workflow_hub_singleton
+from http_api.workflow_storage import load_workflow
 
 router = APIRouter()
 _LOG = logging.getLogger(__name__)

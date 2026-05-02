@@ -9,10 +9,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from api.routes import memory as memory_routes
-from api.routes import runs as runs_routes
-from api.routes import workflow_runs as wf_runs_routes
-from api.routes import workflows as workflows_routes
+from http_api.routes import memory as memory_routes
+from http_api.routes import runs as runs_routes
+from http_api.routes import workflow_runs as wf_runs_routes
+from http_api.routes import workflows as workflows_routes
 
 load_dotenv()
 

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.deps import get_pipeline_controller
+from http_api.deps import get_pipeline_controller
 from core.config import ContentPiece, RunConfig, RunResult, RunSummary
 from core.pipeline import PipelineController
 

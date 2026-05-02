@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from workflow.registry import get_node_type_schemas
 from workflow.schema import WorkflowSpec
 
-from api.workflow_storage import (
+from http_api.workflow_storage import (
     clone_template,
     delete_workflow,
     list_stored_ids,

@@ -6,6 +6,20 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   base: "/app/",
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/reactflow")) return "reactflow";
+          if (
+            id.includes("node_modules/react-markdown") ||
+            id.includes("node_modules/remark")
+          )
+            return "markdown";
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

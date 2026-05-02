@@ -1,6 +1,6 @@
 ---
 description: FastAPI routes — delegate to PipelineController
-globs: api/**/*.py
+globs: http_api/**/*.py
 alwaysApply: false
 ---
 

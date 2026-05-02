@@ -43,7 +43,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["core", "agents", "tools", "memory", "api", "cli", "workflow"]
+packages = ["core", "agents", "tools", "memory", "http_api", "cli", "workflow"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "evals"]
@@ -56,4 +56,4 @@ target-version = "py311"
 [tool.mypy]
 python_version = "3.11"
 warn_unused_configs = true
-packages = ["core", "agents", "tools", "memory", "api", "cli", "workflow"]
+packages = ["core", "agents", "tools", "memory", "http_api", "cli", "workflow"]

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from api.deps import get_pipeline_controller
-from api.server import app
+from http_api.deps import get_pipeline_controller
+from http_api.server import app
 from core.config import RunConfig, RunResult, RunSummary
 from core.pipeline import PipelineController
 

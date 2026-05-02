@@ -124,7 +124,7 @@ export function extractRunSections(payload: unknown): {
 
   walkForDisplay(isRecord(fo) ? fo : undefined, texts, imgs, "", seenText, seenPaths);
 
-  if (!texts.length && !imgs.length && payload && isRecord(payload.node_outputs)) {
+  if (!texts.length && !imgs.length && isRecord(payload) && isRecord(payload.node_outputs)) {
     walkForDisplay(payload.node_outputs as Record<string, unknown>, texts, imgs, "", seenText, seenPaths);
   }
 
@@ -216,7 +216,11 @@ export function extractNodeOutputs(payload: unknown): NodeOutputBlock[] {
   if (isRecord(fo) && isRecord((fo as Record<string, unknown>).nodes)) {
     nodesMap = (fo as Record<string, unknown>).nodes as Record<string, unknown>;
   }
-  if (!nodesMap && isRecord(payload.node_outputs) && isRecord((payload.node_outputs as Record<string, unknown>).nodes)) {
+  if (
+    !nodesMap &&
+    isRecord(payload.node_outputs) &&
+    isRecord((payload.node_outputs as Record<string, unknown>).nodes)
+  ) {
     nodesMap = (payload.node_outputs as Record<string, unknown>).nodes as Record<string, unknown>;
   }
   if (!nodesMap) return [];

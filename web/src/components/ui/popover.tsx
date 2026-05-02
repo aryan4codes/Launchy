@@ -29,7 +29,7 @@ function studioPopoverMount(): HTMLElement {
 interface Ctx {
   open: boolean;
   setOpen: (v: boolean) => void;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  triggerRef: React.MutableRefObject<HTMLButtonElement | null>;
 }
 
 const PopoverCtx = React.createContext<Ctx | null>(null);

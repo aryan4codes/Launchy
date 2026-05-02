@@ -56,7 +56,9 @@ export function MarkdownProse({
             </tr>
           ),
         }}
-      />
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }

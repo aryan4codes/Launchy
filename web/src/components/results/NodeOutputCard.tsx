@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { MarkdownProse } from "@/components/MarkdownProse";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCatalogEntry, CATEGORY_META } from "@/lib/nodeCatalog";
+import { getCatalogEntry } from "@/lib/nodeCatalog";
 import type { DisplayImageBlock } from "@/lib/runPayloadDisplay";
 import { ImageGallery } from "./ImageGallery";
 import { tryParseSerperJson, SearchResults } from "./SearchResults";
@@ -27,8 +27,11 @@ export function NodeOutputCard({
   nodeType,
   markdown,
   images,
+  defaultExpanded = true,
   compact = false,
   collapsible = true,
+  markdownWrapperClass,
+  suppressHeader = false,
 }: {
   nodeId: string;
   nodeType: string | null;
@@ -37,12 +40,15 @@ export function NodeOutputCard({
   defaultExpanded?: boolean;
   compact?: boolean;
   collapsible?: boolean;
+  /** e.g. max-h plus overflow for dense dashboard columns */
+  markdownWrapperClass?: string;
+  /** Markdown / gallery only — for nested marketing columns */
+  suppressHeader?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const { copied, copy } = useCopy(markdown);
 
   const cat = getCatalogEntry(nodeType ?? "unknown");
-  const meta = CATEGORY_META[cat.category];
   const Icon: LucideIcon = cat.icon;
 
   const categoryColorMap: Record<string, string> = {
@@ -56,86 +62,103 @@ export function NodeOutputCard({
   };
   const tagColor = categoryColorMap[cat.category] ?? categoryColorMap.transform;
 
+  const serperData = markdown.trim() ? tryParseSerperJson(markdown) : null;
+
   return (
     <section
       className={cn(
         "rounded-xl border border-border bg-card shadow-sm overflow-hidden",
-        compact && "rounded-lg shadow-none",
+        compact && !suppressHeader && "rounded-lg shadow-none",
+        suppressHeader && "border-0 shadow-none rounded-none bg-transparent",
       )}
     >
-      {collapsible ? (
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className={cn(
-            "flex w-full items-center gap-3 text-left hover:bg-muted/30 transition-colors",
-            compact ? "px-4 py-3" : "px-5 py-4",
-          )}
-        >
-          <span className={cn("flex shrink-0 items-center justify-center rounded-lg", compact ? "h-8 w-8" : "h-9 w-9", tagColor)}>
-            <Icon className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground truncate">{cat.label}</span>
-              <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                {nodeId}
-              </span>
-            </div>
-            {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
-          </div>
-          <span className="shrink-0 text-muted-foreground">
-            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </span>
-        </button>
-      ) : (
-        <div
-          className={cn(
-            "flex items-center gap-3 border-b border-border bg-muted/20",
-            compact ? "px-4 py-3" : "px-5 py-4",
-          )}
-        >
-          <span className={cn("flex shrink-0 items-center justify-center rounded-lg", compact ? "h-8 w-8" : "h-9 w-9", tagColor)}>
-            <Icon className="h-4 w-4" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground truncate">{cat.label}</span>
-              <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                {nodeId}
-              </span>
-            </div>
-            {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
-          </div>
-        </div>
-      )}
-
-      {(!collapsible || expanded) && (
-        <div className="border-t border-border">
-          {markdown && (() => {
-            const serper = tryParseSerperJson(markdown);
-            return (
-              <div className="relative px-5 py-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-3 top-3 z-10 h-7 gap-1 text-xs text-muted-foreground"
-                  onClick={() => void copy()}
-                >
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? "Copied" : "Copy"}
-                </Button>
-                {serper ? <SearchResults data={serper} /> : <MarkdownProse content={markdown} />}
+      {!suppressHeader ? (
+        collapsible ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className={cn(
+              "flex w-full items-center gap-3 text-left hover:bg-muted/30 transition-colors",
+              compact ? "px-4 py-3" : "px-5 py-4",
+            )}
+          >
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-lg",
+                compact ? "h-8 w-8" : "h-9 w-9",
+                tagColor,
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground truncate">{cat.label}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  {nodeId}
+                </span>
               </div>
-            );
-          })()}
-          {images.length > 0 && (
-            <div className={cn(markdown && "border-t border-border")}>
+              {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
+            </div>
+            <span className="shrink-0 text-muted-foreground">
+              {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </span>
+          </button>
+        ) : (
+          <div
+            className={cn(
+              "flex items-center gap-3 border-b border-border bg-muted/20",
+              compact ? "px-4 py-3" : "px-5 py-4",
+            )}
+          >
+            <span
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-lg",
+                compact ? "h-8 w-8" : "h-9 w-9",
+                tagColor,
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground truncate">{cat.label}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  {nodeId}
+                </span>
+              </div>
+              {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
+            </div>
+          </div>
+        )
+      ) : null}
+
+      {((!suppressHeader && (!collapsible || expanded)) || suppressHeader) &&
+      !!(markdown.trim() || images.length > 0) ? (
+        <div className={cn(!suppressHeader && collapsible && "border-t border-border")}>
+          {markdown.trim() ? (
+            <div className={cn("relative", compact ? "px-4 py-3" : "px-5 py-4")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-3 top-3 z-10 h-7 gap-1 text-xs text-muted-foreground"
+                onClick={() => void copy()}
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+              <div className={cn(markdownWrapperClass)}>
+                {serperData ? <SearchResults data={serperData} /> : <MarkdownProse content={markdown} />}
+              </div>
+            </div>
+          ) : null}
+          {images.length > 0 ? (
+            <div className={cn(markdown.trim() && "border-t border-border")}>
               <ImageGallery images={images} />
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -208,14 +208,14 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "media.gemini_image",
-    label: "Gemini image",
-    short: "Generate an image with Gemini.",
+    label: "GPT image",
+    short: "Generate or edit images via OpenAI.",
     description:
-      "Calls Google Gemini's image generation model with the rendered prompt. Returns the saved file path; the run drawer renders a live preview.",
+      "Uses the OpenAI Image API: text-only prompts call images.generate (gpt-image-2). Set input_images_template to one or more pipe-separated file paths (after Jinja) to use images.edit; optional mask_image_path_template for masked edits. Saves PNGs under the run; the run drawer previews them.",
     category: "media",
     icon: ImageIcon,
-    longTextKeys: ["prompt_template"],
-    templateKeys: ["prompt_template"],
+    longTextKeys: ["prompt_template", "input_images_template", "mask_image_path_template"],
+    templateKeys: ["prompt_template", "input_images_template", "mask_image_path_template"],
   },
   {
     type: "output.pieces",

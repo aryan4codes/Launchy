@@ -126,11 +126,17 @@ class OutputPiecesParams(BaseModel):
     include_node_metadata: bool = True
 
 
-class GeminiImageParams(BaseModel):
+class OpenAIImageParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     prompt_template: str
-    model: str | None = "gemini-2.5-flash-image"
+    model: str | None = "gpt-image-2"
+    """Pipe-separated image paths (Jinja). Empty → ``images.generate``; one or more → ``images.edit``."""
+
+    input_images_template: str | None = None
+    mask_image_path_template: str | None = None
+    size: str | None = None
+    quality: str | None = None
 
 
 class RunStatus(str, Enum):

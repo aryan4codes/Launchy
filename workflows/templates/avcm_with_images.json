@@ -21,7 +21,7 @@
       "type": "media.gemini_image",
       "data": {
         "prompt_template": "Illustration, high detail PNG style: {{ upstream['brief']['text'] }}",
-        "model": "gemini-2.5-flash-image"
+        "model": "gpt-image-2"
       },
       "position": { "x": 520, "y": 0 }
     },

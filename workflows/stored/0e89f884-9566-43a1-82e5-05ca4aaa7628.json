@@ -1,5 +1,5 @@
 {
-  "id": "550163df-5a16-4dd3-ab68-d0405ade199b",
+  "id": "0e89f884-9566-43a1-82e5-05ca4aaa7628",
   "name": "avcm_with_images-copy",
   "nodes": [
     {
@@ -7,12 +7,12 @@
       "type": "trigger.input",
       "params": {
         "keys": [
-          "StudyAbroad"
+          "McDonalds"
         ]
       },
       "position": {
-        "x": 0.0,
-        "y": 0.0
+        "x": -1.0485981308410715,
+        "y": 1.0485981308411283
       }
     },
     {

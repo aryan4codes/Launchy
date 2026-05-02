@@ -12,11 +12,11 @@ from tools.memory_query import build_memory_query_tool
 from tools.memory_write import build_memory_write_tool
 from tools.reddit_tool import reddit_top_signals
 from workflow.context import NodeExecContext
-from workflow.nodes.gemini_image_node import run_gemini_image_node
+from workflow.nodes.openai_image_node import run_openai_image_node
 from workflow.render import merge_context, render_template
 from workflow.schema import (
     CrewAIParams,
-    GeminiImageParams,
+    OpenAIImageParams,
     MemoryQueryParams,
     MemoryWriteParams,
     OutputPiecesParams,
@@ -207,9 +207,9 @@ def handler_output_pieces(ctx: NodeExecContext, params: dict[str, Any]) -> dict[
     return {"chunks": list(bucket.values())}
 
 
-def handler_gemini_image(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
-    p = GeminiImageParams.model_validate(params)
-    return run_gemini_image_node(ctx, p)
+def handler_openai_image(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = OpenAIImageParams.model_validate(params)
+    return run_openai_image_node(ctx, p)
 
 
 _REGISTRY: dict[str, tuple[dict[str, Any], Any]] = {
@@ -232,8 +232,8 @@ _REGISTRY: dict[str, tuple[dict[str, Any], Any]] = {
         lambda ctx, raw: handler_output_pieces(ctx, raw),
     ),
     "media.gemini_image": (
-        GeminiImageParams.model_json_schema(),
-        lambda ctx, raw: handler_gemini_image(ctx, raw),
+        OpenAIImageParams.model_json_schema(),
+        lambda ctx, raw: handler_openai_image(ctx, raw),
     ),
 }
 

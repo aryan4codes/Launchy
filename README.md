@@ -1,24 +1,40 @@
-# AVCM — Autonomous Viral Content Machine
+# Launchy
 
-AVCM is a unified platform for end-to-end viral content generation, orchestrating a network of six specialized **CrewAI** agents that collaborate to ideate, draft, refine, and select high-performing content pieces. At its core is the **PipelineController**, a stateless orchestrator that exposes the full content lifecycle via both a modern **CLI** and a fast, RESTful **FastAPI** server — ensuring the same codepaths and configuration whether you're running interactively or deploying as an API service.
+**Launchy** helps you turn a niche or product idea into **scroll-stopping posts and creatives** — with real-world context from social signals (especially **Reddit**), structured AI drafts, scoring, optional **hero images**, and a path to refine what worked over time.
 
-The system leverages **ChromaDB** vector memory (powered by OpenAI's `text-embedding-3-small` model) for long-term tracking of content performance and feedback loops. All generations and analytics are grounded in social "signals" by default: signals are sourced primarily from **Reddit** (for trend mining and angle discovery), while **Instagram** support is architected but intentionally limited — unlocked for future use with `--instagram` and powered via Apify scraping, currently stubbed and opt-in for privacy and reliability reasons.
+In plain terms:
 
-AVCM is designed for rapid experimentation, extensibility, and production readiness. Whether you want to automate content creation for a fast-moving startup, run experiments on different social platforms, or pipe results into your analytics stack, AVCM provides the infrastructure, agent logic, and programmatic API endpoints to handle the full pipeline. Key features include highly configurable run settings, csv-based memory ingest for closed-loop learning, and support for multiple output platforms and social channels.
+1. **You describe a niche.** Launchy gathers trends and language from Reddit and search.
+2. **AI agents collaborate** — they shape angles, copy, headlines, briefs — like a tight marketing pod.
+3. **You run it from the CLI, over HTTP, or in the Workflow Studio** — connect blocks visually, plug in templates, hit Run, inspect results.
+
+Behind the curtain this repo ships two complementary experiences:
+
+| Path | Who it’s for |
+| ------ | ----------- |
+| **Classic pipeline** | One-command runs (`avcm run`): niche → signals → drafts → structured JSON on disk |
+| **Workflow canvas** | Build your own graphs (sources, CrewAI agents, transforms, GPT image blocks, collectors) saved under `workflows/stored/` and executed async with streamed events |
+
+Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings + optional GPT Image **`gpt-image-2`**), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is scaffolded (`--instagram` / RunConfig flag) but still opt-in pending Apify wiring.
+
+The CLI binary is still **`avcm`** — same codebase, same orchestration (**`PipelineController`**) whether you ship the classic API routes or workflow routes.
+
+---
 
 ## Prerequisites
 
 - Python **3.11**
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or package manager)
 - API keys in `.env` (copy from `.env.example`):
-  - **`OPENAI_API_KEY`** — agents + `text-embedding-3-small` embeddings for Chroma
-  - **`SERPER_API_KEY`** — Trend Hunter Google search (`SerperDevTool`)
+  - **`OPENAI_API_KEY`** — agents, `text-embedding-3-small` embeddings, workflow image blocks (`media.gemini_image` → OpenAI **`images.generate` / `images.edit`**, default model **`gpt-image-2`**)
+  - **`SERPER_API_KEY`** — Google-style search snippets for Trend Hunter (**`SerperDevTool`**)
 
 Optional:
 
-- **`GOOGLE_API_KEY`** — `media.gemini_image` workflow node (Imagen / Gemini image)
 - **`CHROMA_PERSIST_DIR`** — overrides `./memory/performance_db`
 - **`APIFY_API_TOKEN`** + `uv sync --extra instagram` — reserved for future Instagram actor wiring
+
+---
 
 ## Setup
 
@@ -27,45 +43,50 @@ uv sync
 cp .env.example .env   # fill keys
 ```
 
+---
+
 ## CLI
 
-Relevance is driven by your **`--niche` text** plus Serper searches templated from it (see `agents/crew_adapter.py` `_serper_query_hints`). Default Reddit subs are **niche-agnostic** broad discovery; pass **`--subreddits a,b,c`** when you want community-specific sourcing — there is **no** vertical keyword routing in code.
+Relevance grows from your **`--niche` copy** plus Serper queries derived from it (see `agents/crew_adapter.py` `_serper_query_hints`). Reddit defaults are intentionally broad discovery; pass **`--subreddits a,b,c`** when you want focused communities — there’s no baked-in vertical taxonomy in code.
 
 ```bash
 # Pipeline run (writes outputs/<run_id>.json)
 uv run avcm run --niche "AI SaaS"
 
-# Options shown — defaults match RunConfig (5 angles, 2 variations, twitter+linkedin)
+# Example options — defaults follow RunConfig (e.g. platforms, angles, variants)
 uv run avcm run --niche "AI SaaS" --subreddits "SaaS,Entrepreneur" --platforms "twitter,linkedin"
 
-# Instagram stub tool adds narrative hint only (no Apify scrape yet)
+# Instagram stub: adds hints only until Apify scraping is wired
 uv run avcm run --niche "fitness" --instagram
 
-# Post-publish metrics → delta updates in Chroma (CSV columns: content_id,likes,shares,comments)
+# After publishing: ingest CSV → Chroma deltas (columns like content_id, likes, shares, comments)
 uv run avcm memory ingest path/to/results.csv
 
-# FastAPI (same controller as CLI)
+# Same engine as CLI, over HTTP + workflow routes
 uv run avcm serve --port 8000
 ```
 
+---
+
 ## HTTP API
 
-- **`POST /runs/`** — JSON body matches **`RunConfig`** (`niche`, optional `platforms`, `angles`, `variations`, `include_instagram`, …)
-- **`GET /runs/{run_id}`** — read **`outputs/{run_id}.json`** produced by the CLI/controller (filesystem-backed placeholder persistence)
-- **`GET /runs/{run_id}/pieces`** — JSON array of content pieces only
-- **`POST /memory/ingest`** — multipart CSV upload (same columns as CLI ingest)
+- **`POST /runs/`** — body matches **`RunConfig`** (`niche`, optional `platforms`, `angles`, variations, `include_instagram`, …)
+- **`GET /runs/{run_id}`** — read **`outputs/{run_id}.json`** written by each run (filesystem-backed)
+- **`GET /runs/{run_id}/pieces`** — content pieces JSON only
+- **`POST /memory/ingest`** — multipart CSV upload (same shape as CLI)
 - **`GET /health`**
 - **Workflow canvas**
-  - **`GET /workflows/node-types`** — JSON Schema per handler kind (`trigger.input`, `media.gemini_image`, …)
-  - **`GET /workflows`**, **`POST /workflows`**, **`GET|PUT|DELETE /workflows/{id}`** — saved graphs under **`workflows/stored/`**
+  - **`GET /workflows/node-types`** — JSON Schema per node kind (`trigger.input`, `agent.crewai`, `media.gemini_image`, …)
+  - **`GET /workflows`**, **`POST /workflows`**, **`GET|PUT|DELETE /workflows/{id}`** — saved graphs in **`workflows/stored/`**
   - **`GET /workflows/templates`**, **`GET /workflows/templates/{id}`**, **`POST /workflows/clone-template`**
-  - **`POST /workflow-runs`** — body `{ "workflow_id": "<stored-uuid>", "inputs": { … } }` or inline `"workflow": { … }`; artifacts **`outputs/<run_id>/`** (`workflow_run.json`, **`nodes/`**, **`events.jsonl`**)
-  - **`GET /workflow-runs/{run_id}`** — latest meta snapshot
-  - **WebSocket** **`/workflow-runs/{run_id}/ws`** — streams JSON lines from **`events.jsonl`**; terminal **`{ "type": "sync", … }`** when status is **completed** / **failed**
-  - **`GET /artifacts/{path}`** — static files under **`outputs/`** (PNG previews for Gemini nodes use relative keys like **`{run_id}/images/...`**)
-- **Static UI**: build **`cd web && npm run build`**, then open **`http://127.0.0.1:8000/app/`** while **`uv run avcm serve`** runs. Local UI dev: **`cd web && npm run dev`** (port 5173 proxies to the API on 8000).
+  - **`POST /workflow-runs`** — `{ "workflow_id": "<id>", "inputs": { … } }` or inline `"workflow"`; artifacts under **`outputs/<run_id>/`** (`workflow_run.json`, **`nodes/`**, **`events.jsonl`**)
+  - **`GET /workflow-runs/{run_id}`** — snapshot of run metadata + outputs
+  - **WebSocket** **`/workflow-runs/{run_id}/ws`** — streams parsed events until **completed** / **failed**, then a **`sync`** message
+  - **`GET /artifacts/{path}`** — files under **`outputs/`** (e.g. **`{run_id}/images/...`** for image-node PNGs)
 
-Example:
+**Frontend:** `cd web && npm run build`, then **`http://127.0.0.1:8000/app/`** with **`uv run avcm serve`** (Vite **`base`/static mount is `/app/`). Local UI dev: **`cd web && npm run dev`** (proxies workflows and artifacts to API port 8000).
+
+Example pipeline call:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/runs/ \
@@ -73,11 +94,15 @@ curl -s -X POST http://127.0.0.1:8000/runs/ \
   -d '{"niche":"AI SaaS"}' | jq .
 ```
 
-## Success metrics & telemetry hooks
+---
 
-- **Structured logs**: JSON lines on **`stderr`** from logger **`avcm`** (`core/logging.py`) with `"run_started"` / `"run_finished"` payloads (`run_id`, `success`, `pieces`).
-- **Artifacts**: Each successful run writes **`outputs/<run_id>.json`** for downstream scoring or dashboards (`PipelineController`).
-- **Calibration CSV**: Feed **`memory ingest`** after collecting likes/shares/comments so **`delta`** is recomputed vs **`predicted_score`** stored in Chroma metadata.
+## Success metrics & telemetry
+
+- Structured JSON logs from logger **`avcm`** (`core/logging.py`) — **`run_started`** / **`run_finished`** (`run_id`, `success`, `pieces`).
+- Each successful **`avcm run`** writes **`outputs/<run_id>.json`** for dashboards or QA.
+- After you collect engagement, **`memory ingest`** updates **`delta`** vs stored **`predicted_score`** metadata in Chroma.
+
+---
 
 ## Tests & lint
 
@@ -86,6 +111,8 @@ uv run pytest
 uv run ruff check core agents tools memory api cli workflow tests evals
 ```
 
-## Governance
+---
 
-See **[AGENTS.md](AGENTS.md)** for MCP servers (**Apify** for Instagram authoring), Reddit-first defaults, and layer boundaries. Cursor rules live in **`.cursor/rules/`**.
+## Contributing & internals
+
+Contributor notes and MCP hints live in **[AGENTS.md](AGENTS.md)**. Cursor rules: **`.cursor/rules/`**.

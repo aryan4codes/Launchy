@@ -667,7 +667,7 @@ export default function WorkflowStudio() {
             <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             <span
               aria-hidden
-              className="origin-center rotate-90 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground"
+              className="select-none text-[10px] font-semibold uppercase tracking-[0.18em] text-foreground [text-orientation:mixed] [writing-mode:vertical-rl]"
             >
               Inspector
             </span>

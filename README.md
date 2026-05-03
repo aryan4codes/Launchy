@@ -19,6 +19,16 @@ Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** ag
 
 The CLI binary is still **`avcm`** — same codebase, same orchestration (**`PipelineController`**) whether you ship the classic API routes or workflow routes.
 
+### Workflow Studio & launch output
+
+| Workflow Studio | Launch analysis |
+| --- | --- |
+| ![Workflow Studio: canvas, blocks, inspector, run console](outputs/input.png) | ![Launch analysis dashboard](outputs/analysis.png) |
+
+| Go-to-market pack | Full launch output |
+| --- | --- |
+| ![Copy, creative brief, and score sections](outputs/go_to_market.png) | ![Launch analysis: research through deliverables](outputs/output_img.png) |
+
 ---
 
 ## Prerequisites

@@ -7,15 +7,15 @@ build/
 .mypy_cache/
 .ruff_cache/
 .env
+# Run artifacts (keep root README screenshots *.png tracked)
 outputs/*.json
+outputs/*/
 !outputs/.gitkeep
 memory/performance_db/*
 !memory/performance_db/.gitkeep
 .pytest_cache/
 .cursor/workspace*
 
-
-/outputs
 .vercel
 
 /workflows/stored

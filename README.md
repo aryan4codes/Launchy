@@ -21,13 +21,21 @@ The CLI binary is still **`avcm`** — same codebase, same orchestration (**`Pip
 
 ### Workflow Studio & launch output
 
-| Workflow Studio | Launch analysis |
-| --- | --- |
-| ![Workflow Studio: canvas, blocks, inspector, run console](outputs/input.png) | ![Launch analysis dashboard](outputs/analysis.png) |
+**Workflow Studio** — canvas, blocks, inspector, run console  
 
-| Go-to-market pack | Full launch output |
-| --- | --- |
-| ![Copy, creative brief, and score sections](outputs/go_to_market.png) | ![Launch analysis: research through deliverables](outputs/output_img.png) |
+![Workflow Studio: canvas, blocks, inspector, run console](outputs/input.png)
+
+**Launch analysis**
+
+![Launch analysis dashboard](outputs/analysis.png)
+
+**Go-to-market pack** — copy, creative brief, score  
+
+![Copy, creative brief, and score sections](outputs/go_to_market.png)
+
+**Full launch output**
+
+![Launch analysis: research through deliverables](outputs/output_img.png)
 
 ---
 

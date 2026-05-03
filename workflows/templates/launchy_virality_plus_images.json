@@ -1,0 +1,197 @@
+{
+  "id": "launchy_virality_plus_images",
+  "name": "Launchy Virality + Stunning Images Pack",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": {
+        "keys": ["topic"]
+      },
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "subreddit_researcher",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Reddit Research Strategist",
+        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
+        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names — only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
+      },
+      "position": {
+        "x": 220,
+        "y": 0
+      }
+    },
+    {
+      "id": "reddit",
+      "type": "source.reddit",
+      "data": {
+        "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
+        "limit": 15
+      },
+      "position": {
+        "x": 460,
+        "y": -120
+      }
+    },
+    {
+      "id": "serper",
+      "type": "source.serper",
+      "data": {
+        "query_template": "{{ topic }} recent news launches product announcements breakthrough 2026"
+      },
+      "position": {
+        "x": 460,
+        "y": 120
+      }
+    },
+    {
+      "id": "merge_signals",
+      "type": "transform.template",
+      "data": {
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing recent, concrete happenings beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves — but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (why this matters NOW for audience) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
+      },
+      "position": {
+        "x": 700,
+        "y": 0
+      }
+    },
+    {
+      "id": "psych",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Viral Content Audience Psychologist",
+        "goal": "Map triggers and pains for '{{ topic }}' while highlighting what is happening RIGHT NOW in the niche (specific launches, debates, hype cycles) grounded only in signals.",
+        "backstory": "You specialize in tying audience emotion to timely context for social-first viral content — Instagram, TikTok, LinkedIn, and X. Extract named companies, tools, milestones, headlines, launches, backlash, hype — only what's supported by Reddit/Serper text. Prefer recency cues (this month, just dropped) when signals support them.",
+        "task_description_template": "Topic: {{ topic }}\n\nResearch signals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce a memo that merges psychology WITH timeliness:\n- List 5-10 recent-happening snippets lifted from signals (bullet: event + Why people care).\nIf signals have no usable recent specifics, explicitly write \"Limited recent specificity in feeds\" and derive evergreen hooks.",
+        "expected_output": "Structured memo: (A) Timeline / what is buzzing now (bullets citing signal evidence), (B) Emotional triggers tied to those events, (C) Pain points/desires/objections grounded in snippets, (D) Hooks that mention real names/topics from signals when relevant, (E) Forbidden: invent launches or unnamed big news."
+      },
+      "position": {
+        "x": 920,
+        "y": 0
+      }
+    },
+    {
+      "id": "angles",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Viral Content Strategist",
+        "goal": "Design 6 differentiated angles for '{{ topic }}' each anchored where possible by a concrete recent headline, launch, breakthrough, startup, regulation, viral thread, paper, benchmark, meme from signals.",
+        "backstory": "You obsess over timeliness and platform-native formats — carousels, threads, Reels hooks, LinkedIn essays. People share what feels live in the Zeitgeist — not evergreen platitudes. You translate named events into story angles creators can riff on honestly.",
+        "task_description_template": "Topic: {{ topic }}\n\nAudience psychology + timeliness memo:\n{{ upstream['psych']['text'] }}\n\nDesign 6 viral content angles. For each angle specify which specific signal-backed fact/tool/brand/debate/person it leans on. If insufficient fresh facts existed in your upstream memo, mark that angle clearly as evergreen-fallback rooted in Reddit language.",
+        "expected_output": "6 numbered angles, each with: (1) Title, (2) Linked recent fact/tool/launch (quoted from memo or omit if none), (3) Emotional lever, (4) Platforms, (5) Rating 1-10 + rationale."
+      },
+      "position": {
+        "x": 1140,
+        "y": 0
+      }
+    },
+    {
+      "id": "copy",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Viral Social Media Copywriter",
+        "goal": "Write punchy copy for '{{ topic }}' whose hooks borrow specificity — real product names, paper titles, Reddit drama, benchmarks, timelines — ONLY when justified by upstream angles/memes.",
+        "backstory": "You write like someone who scrolled the same Reddit + Google results as your audience yesterday. You craft for social-first consumption: short sentences, white space, platform-native tone (conversational on TikTok, authoritative on LinkedIn, punchy on X). Insight density wins: one sharp named reference beats vague inspiration.",
+        "task_description_template": "Topic: {{ topic }}\n\nAngles (already tied to timeliness cues):\n{{ upstream['angles']['text'] }}\n\nFor each angle, write 2 variations. Hooks must EITHER open with a concrete named recent detail from the memo OR deliberately say you're zooming evergreen if no fact fit — never invent news. Include a subtle why-now framing when events exist.",
+        "expected_output": "Per angle → Variation A/B with platform labels: hook referencing specific named element when available, crisp body takeaway, conversational CTA. Flag any angle that had to stay evergreen-only."
+      },
+      "position": {
+        "x": 1360,
+        "y": 0
+      }
+    },
+    {
+      "id": "creative_brief",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Viral Social Creative Director",
+        "goal": "Make each '{{ topic }}' piece production-ready visually, emphasizing screenshots, overlays, screenshot-style headlines, carousel quotes, and platform-native composition around the factual hook used.",
+        "backstory": "You direct social-first viral content: vertical video, carousel slides, and Reels/TikTok/Shorts storyboards. Timely viral creative often looks sourced — headline recap, Reddit screenshot style, ticker text. You annotate how to show the named fact without infringement (paraphrase, logo-free, fair-use awareness).",
+        "task_description_template": "Topic: {{ topic }}\n\nCopy pack:\n{{ upstream['copy']['text'] }}\n\nBrief each variation including how to visually cue recency/news (carousel slide with headline summary, screenshot-style frame, caption timestamp language, comparison table of tools, etc.).",
+        "expected_output": "Annotated pack: Format + Visual concept tying to factual hook when present + On-screen/caption specifics + pacing + compliance-friendly notes (don't fake UI)."
+      },
+      "position": {
+        "x": 1580,
+        "y": 0
+      }
+    },
+    {
+      "id": "score",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Viral Content Performance Analyst",
+        "goal": "Score '{{ topic }}' variations with bonus weight for hooks anchored in verifiable recency/signaling from upstream work (without rewarding fabrication).",
+        "backstory": "You evaluate social content through the lens of shares, saves, comments, and reach — the metrics that define virality on Instagram, TikTok, LinkedIn, and X. You believe timely + truthful beats louder generic content. Reward specificity and shareable urgency grounded in briefing facts.",
+        "task_description_template": "Topic: {{ topic }}\n\nAnnotated content pack:\n{{ upstream['creative_brief']['text'] }}\n\nRank all variations — explicitly note timeliness/specific-signal leverage in each rationale (+5 to +15 mental bonus if hook clearly rides a documented event). Penalise vague sensationalism unrelated to briefing.",
+        "expected_output": "Markdown table: Rank | Variation | Score | Timeliness Lever (Y/N + detail) | Rationale | Best Platform | Risk note (fabrication/low evidence). Closing: top 3 to ship first referencing why recency resonates."
+      },
+      "position": {
+        "x": 1800,
+        "y": 0
+      }
+    },
+    {
+      "id": "image_prompt",
+      "type": "transform.template",
+      "data": {
+        "template": "Create a premium, post-worthy social visual concept for '{{ topic }}'.\n\nUse this strategic context:\n- Winning content direction: {{ upstream['score']['text'] }}\n- Creative production notes: {{ upstream['creative_brief']['text'] }}\n\nImage requirements:\n- ultra-detailed, ad-quality, editorial + cinematic lighting\n- clean composition with a single clear focal point\n- modern brand-safe palette, no watermarks, no gibberish text\n- suitable for Instagram/TikTok/LinkedIn hero usage\n- communicate urgency + aspiration tied to '{{ topic }}'\n- include subtle metaphorical cues from the highest-ranked angle\n\nOutput only the final visual prompt, ready for image generation."
+      },
+      "position": {
+        "x": 2020,
+        "y": 0
+      }
+    },
+    {
+      "id": "hero_images",
+      "type": "media.gemini_image",
+      "data": {
+        "image_model": "flux_dev",
+        "prompt_template": "{{ upstream['image_prompt']['text'] }}",
+        "model_id": "b2614463-296c-462a-9586-aafdb8f00e36",
+        "contrast": 4,
+        "num_images": 4,
+        "width": 1024,
+        "height": 1024,
+        "enhance_prompt": false,
+        "timeout_seconds": 180
+      },
+      "position": {
+        "x": 2260,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": {
+        "x": 2500,
+        "y": 0
+      }
+    }
+  ],
+  "edges": [
+    { "source": "in", "target": "subreddit_researcher" },
+    { "source": "subreddit_researcher", "target": "reddit" },
+    { "source": "in", "target": "serper" },
+    { "source": "reddit", "target": "merge_signals" },
+    { "source": "serper", "target": "merge_signals" },
+    { "source": "merge_signals", "target": "psych" },
+    { "source": "psych", "target": "angles" },
+    { "source": "angles", "target": "copy" },
+    { "source": "copy", "target": "creative_brief" },
+    { "source": "creative_brief", "target": "score" },
+    { "source": "creative_brief", "target": "image_prompt" },
+    { "source": "score", "target": "image_prompt" },
+    { "source": "image_prompt", "target": "hero_images" },
+    { "source": "score", "target": "out" },
+    { "source": "hero_images", "target": "out" }
+  ]
+}

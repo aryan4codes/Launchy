@@ -447,6 +447,22 @@ export default function WorkflowStudio() {
     }
     inputsBody.topic = topic
 
+    const imageNodeMissingModel = nodes.find((n) => {
+      const data = n.data as WorkflowNodeData
+      if (data.wfType !== 'media.gemini_image') return false
+      const chosen = typeof data.image_model === 'string' ? data.image_model.trim() : ''
+      return chosen !== 'flux_dev' && chosen !== 'nano_banana_2' && chosen !== 'gpt_image_2'
+    })
+    if (imageNodeMissingModel) {
+      setSelectedId(imageNodeMissingModel.id)
+      setInspectorOpen(true)
+      setMobileStudioTab('inspector')
+      window.alert(
+        'Please choose an image model (FLUX Dev, Nano Banana 2, or GPT Image 2) in the selected Image node before running.',
+      )
+      return
+    }
+
     const wid = await commitWorkflowToServer()
     if (!wid) return
 

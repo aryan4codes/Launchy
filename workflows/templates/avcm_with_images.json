@@ -22,8 +22,9 @@
       "id": "vis",
       "type": "media.gemini_image",
       "data": {
+        "image_model": "flux_dev",
         "prompt_template": "Illustration, high detail PNG style: {{ upstream['brief']['text'] }}",
-        "model": "gpt-image-2"
+        "model_id": "b2614463-296c-462a-9586-aafdb8f00e36"
       },
       "position": { "x": 520, "y": 0 }
     },

@@ -216,16 +216,28 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "media.gemini_image",
-    label: "Image (GPT)",
+    label: "Generated Images for Virality",
     short: "Create images from plain-language instructions.",
     description:
-      "Describe what should be on screen. You can optionally pull words from your topic or from your Brief step without typing code. Saves PNGs in the run; previews show in Run progress.",
+      "Describe what should be on screen, then choose a model (FLUX Dev or Nano Banana 2). Generated PNGs are stored in the run so previews appear during progress.",
     category: "media",
     icon: ImageIcon,
-    longTextKeys: ["input_images_template", "mask_image_path_template"],
+    longTextKeys: ["enhance_prompt_instruction"],
     easyInspector: { prompt_template: "image_generation_prompt" },
-    inspectorAdvancedKeys: ["model", "quality", "size", "input_images_template", "mask_image_path_template"],
-    inspectorAdvancedSummary: "Optional: model, size & files on disk",
+    inspectorAdvancedKeys: [
+      "model_id",
+      "contrast",
+      "num_images",
+      "width",
+      "height",
+      "style_uuid",
+      "enhance_prompt",
+      "enhance_prompt_instruction",
+      "seed",
+      "ultra",
+      "timeout_seconds",
+    ],
+    inspectorAdvancedSummary: "Optional: style, resolution, and generation tuning",
   },
   {
     type: "output.pieces",
@@ -296,6 +308,7 @@ export interface TemplateMeta {
 
 const GENERAL_TEMPLATE_ORDER: readonly string[] = [
   "avcm_classic",
+  "launchy_virality_plus_images",
   "avcm_with_images",
   "research_only",
   "tweet_only",
@@ -347,11 +360,20 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     badge: "Recommended",
     category: "general",
   },
+  launchy_virality_plus_images: {
+    id: "launchy_virality_plus_images",
+    label: "Launchy Virality + Images",
+    description:
+      "Full Launchy virality pipeline plus a FLUX Dev image branch that turns winning strategy into 4 premium hero visuals.",
+    tagline: "Research, copy, scoring, and stunning image variants",
+    badge: "New",
+    category: "general",
+  },
   avcm_with_images: {
     id: "avcm_with_images",
     label: "Pipeline with hero image",
     description:
-      "Full research-through-score flow plus one GPT-generated hero image from your topic and brief.",
+      "Full research-through-score flow plus one FLUX Dev hero image from your topic and brief.",
     tagline: "Same growth pipeline plus an AI hero image",
     category: "general",
   },

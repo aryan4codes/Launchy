@@ -13,9 +13,9 @@ Behind the curtain this repo ships two complementary experiences:
 | Path | Who it’s for |
 | ------ | ----------- |
 | **Classic pipeline** | One-command runs (`avcm run`): niche → signals → drafts → structured JSON on disk |
-| **Workflow canvas** | Build your own graphs (sources, CrewAI agents, transforms, GPT image blocks, collectors) saved under `workflows/stored/` and executed async with streamed events |
+| **Workflow canvas** | Build your own graphs (sources, CrewAI agents, transforms, FLUX Dev image blocks, collectors) saved under `workflows/stored/` and executed async with streamed events |
 
-Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings + optional GPT Image **`gpt-image-2`**), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is scaffolded (`--instagram` / RunConfig flag) but still opt-in pending Apify wiring.
+Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings), **Leonardo FLUX Dev** (workflow image generation), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is scaffolded (`--instagram` / RunConfig flag) but still opt-in pending Apify wiring.
 
 The CLI binary is still **`avcm`** — same codebase, same orchestration (**`PipelineController`**) whether you ship the classic API routes or workflow routes.
 
@@ -44,7 +44,8 @@ The CLI binary is still **`avcm`** — same codebase, same orchestration (**`Pip
 - Python **3.11**
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or package manager)
 - API keys in `.env` (copy from `.env.example`):
-  - **`OPENAI_API_KEY`** — agents, `text-embedding-3-small` embeddings, workflow image blocks (`media.gemini_image` → OpenAI **`images.generate` / `images.edit`**, default model **`gpt-image-2`**)
+  - **`OPENAI_API_KEY`** — agents + `text-embedding-3-small` embeddings
+  - **`LEONARDO_API_KEY`** — workflow image blocks (`media.gemini_image` → Leonardo **FLUX Dev** via `/generations`)
   - **`SERPER_API_KEY`** — Google-style search snippets for Trend Hunter (**`SerperDevTool`**)
 
 Optional:

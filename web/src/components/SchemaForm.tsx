@@ -192,6 +192,11 @@ export function SchemaForm({
             value={(cur ?? '') === null ? '' : String(cur ?? '')}
             onChange={(e) => setKey(key, e.target.value === '' && nullable ? null : e.target.value)}
           >
+            {required ? (
+              <option value="" disabled>
+                Choose an option
+              </option>
+            ) : null}
             {!required && nullable ? <option value="">Default / auto</option> : null}
             {enumVals.map((opt) => (
               <option key={opt} value={opt}>

@@ -158,7 +158,7 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "agent.crewai",
-    label: "AI agent",
+    label: "AI Agent Task",
     short: "Runs a single CrewAI agent task.",
     description:
       "Spins up a one-shot CrewAI agent with the given role/goal/backstory, runs the task description against upstream context, and returns the raw text.",
@@ -175,8 +175,8 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "transform.template",
-    label: "Template transform",
-    short: "Render a Jinja template against context.",
+    label: "Render a Jinja template ",
+    short: "Template transform",
     description:
       "Renders a Jinja template using upstream outputs and run inputs. Perfect for merging multiple signal streams into one prompt.",
     category: "transform",

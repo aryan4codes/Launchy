@@ -114,8 +114,8 @@ export function NodeOutputCard({
   return (
     <section
       className={cn(
-        "rounded-xl border border-border bg-card shadow-sm overflow-hidden",
-        compact && !suppressHeader && "rounded-lg shadow-none",
+        "overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/30",
+        compact && !suppressHeader && "rounded-lg shadow-none hover:border-border",
         suppressHeader && "border-0 shadow-none rounded-none bg-transparent",
       )}
     >
@@ -141,11 +141,9 @@ export function NodeOutputCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground truncate">{cat.label}</span>
-                <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  {nodeId}
-                </span>
+                {!compact ? <span className="text-[11px] text-muted-foreground">#{nodeId}</span> : null}
               </div>
-              {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>
             </div>
             <span className="shrink-0 text-muted-foreground">
               {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -170,11 +168,9 @@ export function NodeOutputCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground truncate">{cat.label}</span>
-                <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  {nodeId}
-                </span>
+                {!compact ? <span className="text-[11px] text-muted-foreground">#{nodeId}</span> : null}
               </div>
-              {!compact && <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>}
+              <p className="mt-0.5 text-xs text-muted-foreground truncate">{cat.short}</p>
             </div>
           </div>
         )
@@ -194,10 +190,10 @@ export function NodeOutputCard({
                   onClick={() => void copy()}
                 >
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? "Copied" : "Copy"}
+                  {copied ? "Copied" : "Copy section"}
                 </Button>
               </div>
-              <div className={cn(markdownWrapperClass)}>
+              <div className={cn("min-w-0 break-words", markdownWrapperClass)}>
                 {subredditPills ? (
                   <div className="flex flex-wrap gap-2 py-1">
                     {subredditPills.map((sub) => (

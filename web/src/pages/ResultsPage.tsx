@@ -4,16 +4,22 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  MousePointerClick,
+  ScanSearch,
+  Rocket,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState, type Key } from "react";
 
 import { CopyTextButton } from "@/components/CopyTextButton";
+import { AnalysisWorkbench } from "@/components/results/AnalysisWorkbench";
+import { ImageGallery } from "@/components/results/ImageGallery";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NodeOutputCard } from "@/components/results/NodeOutputCard";
 import { ResultsPipelineStrip } from "@/components/results/ResultsPipelineStrip";
+import { RunInputsCard } from "@/components/results/RunInputsCard";
 import { getWorkflowRun } from "@/lib/api";
 import {
   extractNodeOutputs,
@@ -27,11 +33,13 @@ import { cn } from "@/lib/utils";
 
 const SIDE_SCROLL = "max-h-[min(420px,48vh)] overflow-y-auto scrollbar-thin pr-1";
 
-const DELIVERABLE_TAGLINE: Record<string, string> = {
-  copy: "Swipe-ready snippets you can paste into posts",
-  creative_brief: "Shot list, overlays, and format cues",
-  score: "What to publish first—and why",
-};
+const SECTION_NAV = [
+  { id: "previews", label: "Previews" },
+  { id: "summary", label: "How to use" },
+  { id: "research", label: "Research" },
+  { id: "strategy", label: "Analysis workspace" },
+  { id: "pack", label: "Launch pack" },
+] as const;
 
 export default function ResultsPage() {
   const { runId = "" } = useParams<{ runId: string }>();
@@ -117,6 +125,48 @@ export default function ResultsPage() {
     !showDashboard;
 
   const fallbackBlocks = nodeBlocks;
+  const workbenchSections = useMemo(() => {
+    const sections: Array<{
+      id: string;
+      title: string;
+      description: string;
+      blocks: NodeOutputBlock[];
+    }> = [];
+    if (board.strategyAgents.length) {
+      sections.push({
+        id: "strategy",
+        title: "Audience map and angles",
+        description: "Choose the best audience angle before drafting final posts.",
+        blocks: board.strategyAgents,
+      });
+    }
+    if (board.middleAgents.length) {
+      sections.push({
+        id: "narrative",
+        title: "Narrative and drafts",
+        description: "Explore supporting narratives and draft variants.",
+        blocks: board.middleAgents,
+      });
+    }
+    if (board.deliverablesOrdered.length) {
+      sections.push({
+        id: "pack",
+        title: "Launch pack",
+        description: "Final publish-ready assets with priority recommendations.",
+        blocks: board.deliverablesOrdered,
+      });
+    }
+    return sections;
+  }, [board.deliverablesOrdered, board.middleAgents, board.strategyAgents]);
+  const topImages = useMemo(() => {
+    const dedup = new Map<string, NodeOutputBlock["images"][number]>();
+    for (const b of nodeBlocks) {
+      for (const im of b.images) {
+        if (!dedup.has(im.path)) dedup.set(im.path, im);
+      }
+    }
+    return [...dedup.values()].slice(0, 8);
+  }, [nodeBlocks]);
 
   const renderCompactCard = (block: NodeOutputBlock, key: Key) => (
     <NodeOutputCard
@@ -195,7 +245,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-full bg-background pb-20">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-3 px-4 py-3.5 md:items-center md:justify-between md:gap-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-3 px-4 py-2.5 md:items-center md:justify-between md:gap-4">
           <div className="min-w-0 flex-1">
             <Link
               to="/"
@@ -204,7 +254,7 @@ export default function ResultsPage() {
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Studio
             </Link>
-            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground md:text-2xl">
               {meta.workflowName ? (
                 <>
                   Launch analysis{" "}
@@ -227,7 +277,7 @@ export default function ResultsPage() {
             {fullCopyDigest.trim() ? (
               <CopyTextButton
                 text={fullCopyDigest}
-                label="Copy all text"
+                label="Copy full report"
                 size="sm"
                 variant="secondary"
               />
@@ -236,41 +286,101 @@ export default function ResultsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-10 px-4 py-8">
+      <main className="mx-auto max-w-7xl space-y-8 overflow-x-hidden px-4 py-6 md:py-8">
+        {topImages.length ? (
+          <section id="previews" className="space-y-3 rounded-2xl border border-border bg-card/70 p-4 shadow-sm md:p-5">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Creative previews</h2>
+              <p className="text-sm text-muted-foreground">
+                Scan visuals first. Open any image to inspect quality before reading long analysis.
+              </p>
+            </div>
+            <ImageGallery images={topImages} />
+          </section>
+        ) : null}
+
+        <section id="summary" className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <Rocket className="h-3.5 w-3.5 text-primary" aria-hidden />
+            How to use this page
+          </div>
+          <div className="mt-3 grid gap-2 md:grid-cols-3">
+            <div className="rounded-lg bg-muted/30 px-3 py-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+                <ScanSearch className="h-4 w-4 text-primary" />
+                1. Pick the best visual
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Start from Creative previews and shortlist what looks publishable.
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 px-3 py-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+                <MousePointerClick className="h-4 w-4 text-primary" />
+                2. Review one node at a time
+              </div>
+              <p className="text-xs text-muted-foreground">
+                In Analysis workspace, click a node on the left to read it in full on the right.
+              </p>
+            </div>
+            <div className="rounded-lg bg-muted/30 px-3 py-3 text-sm">
+              <div className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+                <Rocket className="h-4 w-4 text-primary" />
+                3. Copy and publish faster
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use Copy section for clean extraction, then adapt for your platform.
+              </p>
+            </div>
+          </div>
+          <dl className="mt-3 grid gap-2 border-t border-border pt-3 text-xs md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd className="text-foreground capitalize">{status}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Visible output blocks</dt>
+                <dd className="text-foreground">{nodeBlocks.length}</dd>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {nicheLabel ? (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Topic</dt>
+                  <dd className="text-right text-foreground">{nicheLabel}</dd>
+                </div>
+              ) : null}
+            </div>
+            <div>
+              <div>
+                <dt className="text-muted-foreground">Run ID</dt>
+                <dd className="mt-0.5 font-mono text-[11px] text-foreground break-all">{meta.runId ?? runId}</dd>
+              </div>
+            </div>
+          </dl>
+        </section>
+
         <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/[0.08] via-card to-muted/30 p-6 shadow-sm md:p-8">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(34,197,94,0.12),_transparent_55%)]" />
           <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0 space-y-3 xl:max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full bg-background/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground ring-1 ring-border/80 backdrop-blur">
                 <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
-                Full pipeline snapshot
+                Pipeline snapshot
               </div>
               <p className="text-balance text-lg font-semibold leading-snug text-foreground md:text-xl">
                 {nicheLabel
-                  ? <>Deep viral research &amp; content pack for&nbsp;<span className="text-primary">{nicheLabel}</span></>
-                  : "Deep viral research & content pack from this workflow."}
+                  ? <>Decision-ready social launch analysis for&nbsp;<span className="text-primary">{nicheLabel}</span></>
+                  : "Decision-ready social launch analysis from this workflow."}
               </p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                <span className="font-mono">{meta.runId ?? runId}</span>
-                <span className="text-border">•</span>
-                <span>{nodeBlocks.length} surfaced blocks</span>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Use the sections below to move from research to platform-ready outputs quickly.
+              </p>
               {inputs && Object.keys(inputs).length > 0 ? (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {Object.entries(inputs).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-background/90 px-2.5 py-1 font-mono text-[11px] shadow-sm backdrop-blur"
-                      title={`${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`}
-                    >
-                      <span className="shrink-0 font-semibold text-primary">{k}</span>
-                      <span className="text-muted-foreground">·</span>
-                      <span className="truncate text-foreground/90">
-                        {typeof v === "string" ? v : JSON.stringify(v)}
-                      </span>
-                    </span>
-                  ))}
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Run context loaded below for reference and reproducibility.
+                </p>
               ) : null}
             </div>
             <div className="w-full shrink-0 xl:w-auto xl:max-w-[min(100%,540px)]">
@@ -278,6 +388,25 @@ export default function ResultsPage() {
             </div>
           </div>
         </section>
+
+        <nav className="sticky top-[53px] z-30 rounded-xl border border-border bg-background/90 p-2 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <ul className="flex flex-wrap gap-2">
+            {SECTION_NAV.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className="inline-flex items-center rounded-full border border-border/70 bg-muted/20 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {inputs && Object.keys(inputs).length > 0 ? (
+          <RunInputsCard inputs={inputs} />
+        ) : null}
 
         {meta.error ? (
           <section
@@ -291,8 +420,19 @@ export default function ResultsPage() {
         {/* Research + narrative dashboard */}
         {!showFallback && showDashboard ? (
           <>
-            <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-              <div className="space-y-4 lg:col-span-5">
+            <section id="research" className="space-y-4">
+              <div className="rounded-xl border border-border/80 bg-card/60 px-4 py-3">
+                <h2 className="text-sm font-semibold text-foreground">Research signals</h2>
+                <p className="text-xs text-muted-foreground">
+                  Audience language, trend evidence, and context snapshots.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/80 bg-card/60 px-4 py-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Topic research
+                  </h3>
+                </div>
                 {board.researchAgents.length ? (
                   <div className="space-y-2">
                     <div className="flex items-baseline justify-between gap-2">
@@ -327,81 +467,18 @@ export default function ResultsPage() {
                   </div>
                 ) : null}
               </div>
+            </section>
 
-              <div className="space-y-6 lg:col-span-7">
-                <div>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                      Audience map & angles
-                    </h2>
-                    <span className="text-[10px] text-muted-foreground">Strategy row</span>
-                  </div>
-                  <div className="mt-3 grid gap-4 md:grid-cols-2">
-                    {board.strategyAgents.map((b) => renderCompactCard(b, b.nodeId))}
-                  </div>
-                </div>
-                {board.middleAgents.length ? (
-                  <div>
-                    <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                      Narrative & drafts
-                    </h2>
-                    <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {board.middleAgents.map((b) =>
-                        renderCompactCard(b, b.nodeId),
-                      )}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            {board.deliverablesOrdered.length ? (
-              <section className="relative overflow-hidden rounded-3xl border-2 border-primary/25 bg-gradient-to-b from-primary/[0.06] via-background to-muted/40 p-6 md:p-8">
-                <div className="pointer-events-none absolute left-6 top-0 h-40 w-40 rounded-full bg-primary/[0.12] blur-3xl md:left-14" />
-                <div className="relative mb-8 max-w-2xl space-y-1">
-                  <h2 className="text-lg font-bold tracking-tight text-foreground md:text-xl">
-                    Your go-to-market pack
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Copy-ready creative, briefing notes, and a simple priority read—laid out
-                    horizontally so teams can skim the launch story fast.
+            {workbenchSections.length ? (
+              <section id="strategy" className="space-y-4">
+                <div className="rounded-xl border border-border/80 bg-card/60 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-foreground">Analysis workspace</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Use the left rail to pick a node. The right panel gives full reading and copying space.
                   </p>
                 </div>
-                <div className="relative grid gap-6 xl:grid-cols-3">
-                  {board.deliverablesOrdered.map((b) => (
-                    <div
-                      key={b.nodeId}
-                      className={cn(
-                        "flex min-h-[280px] flex-col rounded-2xl border-2 border-primary/20 bg-card shadow-md shadow-primary/5",
-                        b.nodeId === "score" && "xl:col-span-3 xl:min-h-0",
-                      )}
-                    >
-                      <div className="border-b border-border px-5 py-3">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                          {b.nodeId}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {DELIVERABLE_TAGLINE[b.nodeId] ?? "Final workflow output"}
-                        </p>
-                      </div>
-                      <div className={cn("flex-1", b.nodeId === "score" && "min-h-0")}>
-                        <NodeOutputCard
-                          nodeId={b.nodeId}
-                          nodeType={b.nodeType}
-                          markdown={b.markdown}
-                          images={b.images}
-                          collapsible={false}
-                          suppressHeader
-                          markdownWrapperClass={
-                            b.nodeId === "score"
-                              ? "max-h-[min(75vh,780px)] overflow-x-auto overflow-y-auto scrollbar-thin"
-                              : "max-h-[min(70vh,640px)] overflow-y-auto scrollbar-thin"
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {board.deliverablesOrdered.length ? <div id="pack" className="scroll-mt-28" /> : null}
+                <AnalysisWorkbench sections={workbenchSections} />
               </section>
             ) : null}
 

@@ -105,7 +105,7 @@ body,
 
 /* ── Markdown prose for results page ── */
 .prose-result {
-  @apply text-[15px] leading-relaxed text-foreground;
+  @apply text-[15px] leading-relaxed text-foreground break-words;
 }
 .prose-result h1 {
   @apply mt-6 mb-3 text-xl font-bold tracking-tight text-foreground;
@@ -120,13 +120,13 @@ body,
   @apply mt-3 mb-1 text-sm font-semibold text-foreground;
 }
 .prose-result p {
-  @apply my-2;
+  @apply my-2 max-w-[80ch];
 }
 .prose-result ul {
-  @apply my-2 ml-1 list-none space-y-1.5;
+  @apply my-2 ml-1 max-w-[80ch] list-none space-y-1.5;
 }
 .prose-result ol {
-  @apply my-2 ml-1 list-none space-y-3;
+  @apply my-2 ml-1 max-w-[80ch] list-none space-y-3;
 }
 .prose-result ol > li {
   @apply relative;

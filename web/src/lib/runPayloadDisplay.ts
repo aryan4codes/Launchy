@@ -343,9 +343,9 @@ export function pipelineStagesFromPartition(p: ResultsBoardPartition): string[] 
   const stages: string[] = [];
   if (p.researchAgents.length) stages.push("Topic research");
   if (p.sources.length) stages.push("Community signals");
-  if (p.transforms.length) stages.push("Fused context");
-  if (p.strategyAgents.length) stages.push("Psychology map");
-  if (p.middleAgents.length) stages.push("Angles & drafts");
+  if (p.transforms.length) stages.push("Combined insights");
+  if (p.strategyAgents.length) stages.push("Audience psychology");
+  if (p.middleAgents.length) stages.push("Angles and drafts");
   if (p.deliverablesOrdered.length) stages.push("Launch pack");
   if (!stages.length) stages.push("Analysis");
   return stages;

@@ -13,10 +13,10 @@ export function RunInputsCard({ inputs }: { inputs: Record<string, unknown> }) {
         <div className="flex items-center gap-2">
           <Settings2 className="h-4 w-4 text-muted-foreground" aria-hidden />
           <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground">
-            Run inputs
+            Run context
           </h2>
         </div>
-        <CopyTextButton text={json} label="Copy" size="sm" variant="ghost" />
+        <CopyTextButton text={json} label="Copy inputs JSON" size="sm" variant="ghost" />
       </div>
       <div className="px-5 py-3">
         <div className="grid gap-2">

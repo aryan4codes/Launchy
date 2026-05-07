@@ -22,9 +22,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkflowRunLive } from "@/hooks/useWorkflowRunLive";
+import { ImageGallery } from "@/components/results/ImageGallery";
 import {
   extractCampaignDisplay,
+  extractRunSections,
   type CampaignDisplayModel,
+  type DisplayImageBlock,
   type EvidenceItemDisplay,
   type PlatformAssetDisplay,
   type TrendOpportunityDisplay,
@@ -208,10 +211,12 @@ function CampaignWorkspace({
   model,
   runId,
   runStatus,
+  generatedImages,
 }: {
   model: CampaignDisplayModel;
   runId: string;
   runStatus?: string | null;
+  generatedImages: DisplayImageBlock[];
 }) {
   const defaultTab = model.platformAssets.length ? `${model.platformAssets[0].platform}-0` : "campaign";
 
@@ -364,6 +369,18 @@ function CampaignWorkspace({
         )}
       </section>
 
+      {generatedImages.length ? (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Image className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-semibold tracking-tight">Generated images</h2>
+          </div>
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <ImageGallery images={generatedImages} />
+          </div>
+        </section>
+      ) : null}
+
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -432,6 +449,7 @@ export default function CampaignPage() {
     runId || undefined,
   );
   const model = useMemo(() => extractCampaignDisplay(payload), [payload]);
+  const generatedImages = useMemo(() => extractRunSections(payload).images, [payload]);
 
   if (loading && !payload) {
     return (
@@ -553,7 +571,7 @@ export default function CampaignPage() {
         </div>
       ) : null}
 
-      <CampaignWorkspace model={model} runId={runId} runStatus={meta.status} />
+      <CampaignWorkspace model={model} runId={runId} runStatus={meta.status} generatedImages={generatedImages} />
     </div>
   );
 }

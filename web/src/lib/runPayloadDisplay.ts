@@ -272,6 +272,16 @@ export function extractInputs(payload: unknown): Record<string, unknown> | null 
   return null;
 }
 
+/** True when the saved workflow graph includes the Instagram Apify source node. */
+export function workflowIncludesInstagramSource(payload: unknown): boolean {
+  if (!isRecord(payload)) return false;
+  const wf = payload.workflow;
+  if (!isRecord(wf)) return false;
+  const nodes = wf.nodes;
+  if (!Array.isArray(nodes)) return false;
+  return nodes.some((n) => isRecord(n) && n.type === "source.instagram");
+}
+
 const PACK_IDS = ["copy", "creative_brief", "score"] as const;
 const STRATEGY_IDS = ["psych", "angles"] as const;
 /** Agents whose job is to set up data for other nodes (e.g. subreddit discovery). */

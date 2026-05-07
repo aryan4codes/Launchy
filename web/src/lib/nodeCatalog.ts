@@ -12,6 +12,7 @@ import {
   Database,
   FileText,
   Globe,
+  Hash,
   Image as ImageIcon,
   Newspaper,
   Play,
@@ -143,6 +144,19 @@ const CATALOG: NodeCatalogEntry[] = [
     previewKeys: ["query_template"],
     templateKeys: ["query_template"],
     easyInspector: { query_template: "search_query_parts" },
+  },
+  {
+    type: "source.instagram",
+    label: "Instagram hashtags (Apify)",
+    short: "Scrapes public hashtag posts via Apify.",
+    description:
+      "Pulls recent hashtag posts/reels as a text digest (default actor apify/instagram-hashtag-scraper). Runs whenever this block is on the canvas. Needs APIFY_API_TOKEN and apify-client (`uv sync --extra instagram`). Optional instagram_hashtags in run inputs overrides the template (comma-separated).",
+    category: "source",
+    icon: Hash,
+    previewKeys: ["hashtags_template", "result_limit"],
+    templateKeys: ["hashtags_template"],
+    inspectorAdvancedKeys: ["result_limit"],
+    inspectorAdvancedSummary: "Posts per hashtag (1–50). Higher uses more Apify quota.",
   },
   {
     type: "source.scrape_url",
@@ -355,7 +369,7 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     id: "avcm_classic",
     label: "Launchy Virality",
     description:
-      "Reddit + Serper signals → psych → angles → copy → creative brief → score.",
+      "Reddit + Serper + Instagram hashtags (Apify) → psych → angles → copy → creative brief → score. Remove the Instagram source block in the canvas if you do not want Apify.",
     tagline: "Research, angles, copy, and scoring",
     badge: "Recommended",
     category: "general",
@@ -364,7 +378,7 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     id: "launchy_virality_plus_images",
     label: "Launchy Virality + Images",
     description:
-      "Full Launchy virality pipeline plus a FLUX Dev image branch that turns winning strategy into 4 premium hero visuals.",
+      "Full research stack with Instagram hashtag scrape (Apify) plus a FLUX Dev image branch. Delete the Instagram source node to skip Apify for that run.",
     tagline: "Research, copy, scoring, and stunning image variants",
     badge: "New",
     category: "general",

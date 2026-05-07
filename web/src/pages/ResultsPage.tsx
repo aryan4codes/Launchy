@@ -27,6 +27,7 @@ import {
   parseRunMeta,
   partitionResultsBoard,
   pipelineStagesFromPartition,
+  workflowIncludesInstagramSource,
   type NodeOutputBlock,
 } from "@/lib/runPayloadDisplay";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,29 @@ export default function ResultsPage() {
     if (typeof topic === "string" && topic.trim()) return topic.trim();
     return null;
   }, [inputs]);
+  const instagramSignals = useMemo(() => {
+    const enabled = workflowIncludesInstagramSource(payload);
+    let fetched = false;
+    let actor: string | null = null;
+    let rows = 0;
+
+    for (const block of nodeBlocks) {
+      const md = block.markdown;
+      if (!md) continue;
+      if (md.includes("### Instagram hashtag signals")) fetched = true;
+      const actorMatch = md.match(/^Actor:\s+(.+)$/m);
+      if (actorMatch && !actor) actor = actorMatch[1]?.trim() ?? null;
+      const itemMatches = md.match(/^- \(.+likes.+comments\)/gm);
+      if (itemMatches?.length) rows += itemMatches.length;
+    }
+
+    return {
+      enabled,
+      fetched,
+      actor,
+      rows,
+    };
+  }, [payload, nodeBlocks]);
 
   const status = meta.status ?? "unknown";
 
@@ -351,12 +375,28 @@ export default function ResultsPage() {
                   <dd className="text-right text-foreground">{nicheLabel}</dd>
                 </div>
               ) : null}
+              {instagramSignals.enabled ? (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted-foreground">Instagram signals</dt>
+                  <dd className="text-right text-foreground">
+                    {instagramSignals.fetched
+                      ? `Fetched${instagramSignals.rows > 0 ? ` (${instagramSignals.rows})` : ""}`
+                      : "Enabled (none captured)"}
+                  </dd>
+                </div>
+              ) : null}
             </div>
             <div>
               <div>
                 <dt className="text-muted-foreground">Run ID</dt>
                 <dd className="mt-0.5 font-mono text-[11px] text-foreground break-all">{meta.runId ?? runId}</dd>
               </div>
+              {instagramSignals.enabled && instagramSignals.actor ? (
+                <div className="mt-2">
+                  <dt className="text-muted-foreground">Instagram actor</dt>
+                  <dd className="mt-0.5 text-[11px] text-foreground break-all">{instagramSignals.actor}</dd>
+                </div>
+              ) : null}
             </div>
           </dl>
         </section>

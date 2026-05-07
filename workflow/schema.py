@@ -85,6 +85,15 @@ class RedditSourceParams(BaseModel):
     limit: Annotated[int, Field(ge=1, le=25)] = 15
 
 
+class InstagramSourceParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    hashtags_template: str = (
+        "{{ instagram_hashtags | default(topic | replace(' ', ','), true) }}"
+    )
+    result_limit: Annotated[int, Field(ge=1, le=50)] = 12
+
+
 class SerperSourceParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

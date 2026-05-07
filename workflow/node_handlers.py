@@ -10,6 +10,7 @@ from typing import Any
 
 from tools.memory_query import build_memory_query_tool
 from tools.memory_write import build_memory_write_tool
+from tools.instagram_apify_tool import instagram_trend_signals
 from tools.reddit_tool import reddit_top_signals
 from workflow.context import NodeExecContext
 from workflow.nodes.openai_image_node import run_openai_image_node
@@ -20,6 +21,7 @@ from workflow.schema import (
     MemoryQueryParams,
     MemoryWriteParams,
     OutputPiecesParams,
+    InstagramSourceParams,
     RedditSourceParams,
     ScrapeURLParams,
     SerperSourceParams,
@@ -105,6 +107,18 @@ def handler_reddit(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, An
     raw = _invoke_tool_like(reddit_top_signals, {"subreddits": subs, "limit": p.limit})
     text = raw if isinstance(raw, str) else str(raw)
     return {"text": text, "subreddits": subs}
+
+
+def handler_instagram(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = InstagramSourceParams.model_validate(params)
+    template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    tags = render_template(p.hashtags_template, template_ctx)
+    raw = _invoke_tool_like(
+        instagram_trend_signals,
+        {"hashtags": tags, "result_limit": p.result_limit},
+    )
+    text = raw if isinstance(raw, str) else str(raw)
+    return {"text": text, "hashtags": tags}
 
 
 def handler_serper(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
@@ -223,6 +237,10 @@ _REGISTRY: dict[str, tuple[dict[str, Any], Any]] = {
     ),
     "agent.crewai": (CrewAIParams.model_json_schema(), lambda ctx, raw: handler_crewai(ctx, raw)),
     "source.reddit": (RedditSourceParams.model_json_schema(), lambda ctx, raw: handler_reddit(ctx, raw)),
+    "source.instagram": (
+        InstagramSourceParams.model_json_schema(),
+        lambda ctx, raw: handler_instagram(ctx, raw),
+    ),
     "source.serper": (SerperSourceParams.model_json_schema(), lambda ctx, raw: handler_serper(ctx, raw)),
     "source.scrape_url": (ScrapeURLParams.model_json_schema(), lambda ctx, raw: handler_scrape(ctx, raw)),
     "memory.query": (MemoryQueryParams.model_json_schema(), lambda ctx, raw: handler_memory_query(ctx, raw)),

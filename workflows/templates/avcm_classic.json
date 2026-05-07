@@ -7,7 +7,8 @@
       "type": "trigger.input",
       "data": {
         "keys": [
-          "topic"
+          "topic",
+          "instagram_hashtags"
         ]
       },
       "position": {
@@ -54,10 +55,22 @@
       }
     },
     {
+      "id": "instagram",
+      "type": "source.instagram",
+      "data": {
+        "hashtags_template": "{{ instagram_hashtags | default(topic | replace(' ', ','), true) }}",
+        "result_limit": 12
+      },
+      "position": {
+        "x": 460,
+        "y": 230
+      }
+    },
+    {
       "id": "merge_signals",
       "type": "transform.template",
       "data": {
-        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves — but ONLY when they appear below in Reddit/Serper data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (“why this matters NOW for [audience]”) tied to '{{ topic }}'.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}"
+        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves — but ONLY when they appear below in Reddit/Serper/Instagram data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (“why this matters NOW for [audience]”) tied to '{{ topic }}'. Prefer Instagram captions/hashtags when the Instagram section lists real posts.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search/hashtag results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}\n\n--- INSTAGRAM HASHTAG SIGNALS (Apify) ---\n{{ upstream['instagram']['text'] }}"
       },
       "position": {
         "x": 700,
@@ -70,7 +83,7 @@
       "data": {
         "role": "Viral Content Audience Psychologist",
         "goal": "Map triggers and pains for '{{ topic }}' while highlighting what is **happening RIGHT NOW** in the niche (specific launches, debates, hype cycles) grounded only in signals.",
-        "backstory": "You specialize in tying audience emotion to timely context for social-first viral content — Instagram, TikTok, LinkedIn, and X. Extract named companies, tools, milestones, headlines, launches, backlash, hype — only what's supported by Reddit/Serper text. Prefer recency cues (\"this month\", \"just dropped\") when signals support them.",
+        "backstory": "You specialize in tying audience emotion to timely context for social-first viral content — Instagram, TikTok, LinkedIn, and X. Extract named companies, tools, milestones, headlines, launches, backlash, hype — only what's supported by Reddit/Serper/Instagram text. Prefer recency cues (\"this month\", \"just dropped\") when signals support them.",
         "task_description_template": "Topic: {{ topic }}\n\nResearch signals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce a memo that merges psychology WITH timeliness:\n- List 5-10 **recent-happening snippets** lifted from signals (bullet: event + Why people care).\nIf signals have no usable recent specifics, explicitly write \"Limited recent specificity in feeds\" and derive evergreen hooks.",
         "expected_output": "Structured memo: (A) Timeline / \"what's buzzing now\" (bullets citing signal evidence), (B) Emotional triggers tied to those events, (C) Pain points/desires/objections grounded in snippets, (D) Hooks that mention real names/topics from signals when relevant, (E) Forbidden: invent launches or unnamed \"big news\"."
       },
@@ -163,11 +176,19 @@
       "target": "serper"
     },
     {
+      "source": "in",
+      "target": "instagram"
+    },
+    {
       "source": "reddit",
       "target": "merge_signals"
     },
     {
       "source": "serper",
+      "target": "merge_signals"
+    },
+    {
+      "source": "instagram",
       "target": "merge_signals"
     },
     {

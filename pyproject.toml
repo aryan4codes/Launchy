@@ -9,6 +9,7 @@ description = "Autonomous Viral Content Machine — CrewAI multi-agent pipeline 
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "apify-client>=2.5.0",
     "beautifulsoup4>=4.13.5",
     "chromadb>=1.1.1",
     "crewai>=1.14.3",

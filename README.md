@@ -15,7 +15,7 @@ Behind the curtain this repo ships two complementary experiences:
 | **Classic pipeline** | One-command runs (`avcm run`): niche → signals → drafts → structured JSON on disk |
 | **Workflow canvas** | Build your own graphs (sources, CrewAI agents, transforms, FLUX Dev image blocks, collectors) saved under `workflows/stored/` and executed async with streamed events |
 
-Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings), **Leonardo FLUX Dev** (workflow image generation), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is scaffolded (`--instagram` / RunConfig flag) but still opt-in pending Apify wiring.
+Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings), **Leonardo FLUX Dev** (workflow image generation), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is opt-in via Apify (`--instagram` / RunConfig flag).
 
 The CLI binary is still **`avcm`** — same codebase, same orchestration (**`PipelineController`**) whether you ship the classic API routes or workflow routes.
 
@@ -51,7 +51,7 @@ The CLI binary is still **`avcm`** — same codebase, same orchestration (**`Pip
 Optional:
 
 - **`CHROMA_PERSIST_DIR`** — overrides `./memory/performance_db`
-- **`APIFY_API_TOKEN`** + `uv sync --extra instagram` — reserved for future Instagram actor wiring
+- **`APIFY_API_TOKEN`** + `uv sync --extra instagram` — enables Instagram hashtag scraping via Apify (`apify/instagram-hashtag-scraper` by default)
 
 ---
 
@@ -75,7 +75,7 @@ uv run avcm run --niche "AI SaaS"
 # Example options — defaults follow RunConfig (e.g. platforms, angles, variants)
 uv run avcm run --niche "AI SaaS" --subreddits "SaaS,Entrepreneur" --platforms "twitter,linkedin"
 
-# Instagram stub: adds hints only until Apify scraping is wired
+# Instagram scraping via Apify hashtag actor (requires APIFY_API_TOKEN and instagram extra)
 uv run avcm run --niche "fitness" --instagram
 
 # After publishing: ingest CSV → Chroma deltas (columns like content_id, likes, shares, comments)

@@ -231,6 +231,7 @@ name = "avcm"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "apify-client" },
     { name = "beautifulsoup4" },
     { name = "chromadb" },
     { name = "crewai" },
@@ -263,6 +264,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "apify-client", specifier = ">=2.5.0" },
     { name = "apify-client", marker = "extra == 'instagram'", specifier = ">=2.5.0" },
     { name = "beautifulsoup4", specifier = ">=4.13.5" },
     { name = "chromadb", specifier = ">=1.1.1" },

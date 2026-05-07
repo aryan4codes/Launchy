@@ -198,21 +198,21 @@ export default function LandingPage() {
                     to="/campaigns"
                     className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-500 to-orange-400 px-7 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-400/50"
                   >
-                    Build my creator persona
+                    Build my Digital Twin
                     <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                   </Link>
                   <Link
                     to="/studio"
                     className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-6 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-white"
                   >
-                    Open workflow studio
+                    Open the Digital Twin Studio
                   </Link>
                 </div>
               </StaggerItem>
               <StaggerItem>
                 <div className="mx-auto mt-14 max-w-3xl">
                   <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    Signals &amp; platforms Launchy speaks with
+                    Signals &amp; platforms Digital Twin speaks with
                   </p>
                   <StaggerReveal
                     className="mt-5 flex flex-wrap items-center justify-center gap-2.5"
@@ -247,7 +247,7 @@ export default function LandingPage() {
           <ScrollReveal duration={0.55} amount={0.25}>
             <div className="mx-auto max-w-2xl text-center">
               <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 shadow-sm">
-                Two ways to launch
+                Two ways to create a Digital Twin
               </div>
               <h2 className="font-display mt-4 text-balance text-4xl font-normal italic tracking-tight md:text-5xl md:leading-[1.12]">
                 Trend research for{" "}

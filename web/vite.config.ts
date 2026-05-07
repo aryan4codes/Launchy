@@ -54,6 +54,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "/workflows": { target: "http://127.0.0.1:8000", changeOrigin: true },
         "/workflow-runs": { target: "http://127.0.0.1:8000", changeOrigin: true, ws: true },
+        "/creator-runs": { target: "http://127.0.0.1:8000", changeOrigin: true },
         "/artifacts": { target: "http://127.0.0.1:8000", changeOrigin: true },
         "/runs": { target: "http://127.0.0.1:8000", changeOrigin: true },
         "/memory": { target: "http://127.0.0.1:8000", changeOrigin: true },

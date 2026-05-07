@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Bookmark,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -10,24 +11,30 @@ import {
   Megaphone,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { MarkdownProse } from "@/components/MarkdownProse";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { HorizontalRunProgress } from "@/components/workflow/HorizontalRunProgress";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getWorkflowRun } from "@/lib/api";
+import { useWorkflowRunLive } from "@/hooks/useWorkflowRunLive";
 import {
   extractCampaignDisplay,
-  parseRunMeta,
   type CampaignDisplayModel,
   type EvidenceItemDisplay,
   type PlatformAssetDisplay,
   type TrendOpportunityDisplay,
 } from "@/lib/runPayloadDisplay";
+import {
+  saveCampaignSnippet,
+  savePersonaSnippet,
+  summarizeCampaignFromDisplay,
+  summarizePersonaFromDisplay,
+} from "@/lib/creatorContextMemory";
 import { platformLabelToLogoDomain } from "@/lib/logoDev";
 import { cn } from "@/lib/utils";
 
@@ -197,8 +204,29 @@ function EvidenceDrawer({ evidence }: { evidence: EvidenceItemDisplay[] }) {
   );
 }
 
-function CampaignWorkspace({ model, runId }: { model: CampaignDisplayModel; runId: string }) {
+function CampaignWorkspace({
+  model,
+  runId,
+  runStatus,
+}: {
+  model: CampaignDisplayModel;
+  runId: string;
+  runStatus?: string | null;
+}) {
   const defaultTab = model.platformAssets.length ? `${model.platformAssets[0].platform}-0` : "campaign";
+
+  const onSavePersonaMemory = () => {
+    const label = window.prompt("Label for this persona memory", model.topic ?? "My persona")?.trim();
+    if (!label) return;
+    savePersonaSnippet({ label, summary: summarizePersonaFromDisplay(model), sourceRunId: runId });
+  };
+
+  const onSaveCampaignMemory = () => {
+    const label = window.prompt("Label for this campaign memory", model.topic ?? "My campaign")?.trim();
+    if (!label) return;
+    saveCampaignSnippet({ label, summary: summarizeCampaignFromDisplay(model), sourceRunId: runId });
+  };
+
   return (
     <main className="mx-auto max-w-7xl space-y-8 px-4 py-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-sm md:p-8">
@@ -232,6 +260,26 @@ function CampaignWorkspace({ model, runId }: { model: CampaignDisplayModel; runI
               <Link to="/campaigns" className="inline-flex h-10 items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background">
                 Edit persona shell
               </Link>
+              {runStatus === "completed" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onSavePersonaMemory}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-4 text-sm font-semibold text-violet-900 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-100"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Save persona memory
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onSaveCampaignMemory}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-50"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Save campaign memory
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -380,40 +428,27 @@ function CampaignWorkspace({ model, runId }: { model: CampaignDisplayModel; runI
 
 export default function CampaignPage() {
   const { runId = "" } = useParams<{ runId: string }>();
-  const [payload, setPayload] = useState<unknown>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!runId) {
-      setErr("Missing run id");
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setErr(null);
-    void getWorkflowRun(runId)
-      .then((data) => {
-        if (!cancelled) setPayload(data);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setErr(e instanceof Error ? e.message : "Could not load this campaign.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [runId]);
-
-  const meta = useMemo(() => parseRunMeta(payload), [payload]);
+  const { payload, loading, err, runUi, nodeIdsOrdered, nodeTypesById, meta, busy } = useWorkflowRunLive(
+    runId || undefined,
+  );
   const model = useMemo(() => extractCampaignDisplay(payload), [payload]);
 
-  if (loading) {
+  if (loading && !payload) {
     return (
-      <div className="min-h-full bg-background">
+      <div className="min-h-full overflow-hidden bg-[#fdf7ee] text-foreground dark:bg-background">
+        <div className="pointer-events-none fixed inset-0 -z-20 dark:opacity-50">
+          <div className="absolute -top-32 left-[-10%] h-[480px] w-[480px] rounded-full bg-fuchsia-300/40 blur-[140px]" />
+          <div className="absolute top-0 right-[-10%] h-[520px] w-[520px] rounded-full bg-amber-300/40 blur-[160px]" />
+        </div>
+        <header className="relative z-30 mx-auto flex max-w-7xl items-center justify-between px-4 py-5">
+          <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-zinc-950 dark:text-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 via-orange-400 to-amber-300 text-white shadow-md">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            Launchy
+          </Link>
+          <ThemeToggle />
+        </header>
         <div className="mx-auto max-w-7xl px-4 py-12">
           <Skeleton className="h-8 w-56 rounded-md" />
           <Skeleton className="mt-8 h-72 rounded-[2rem]" />
@@ -429,10 +464,13 @@ export default function CampaignPage() {
 
   if (err || !payload) {
     return (
-      <div className="min-h-full bg-background px-4 py-14">
-        <div className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-6 text-center shadow-sm">
+      <div className="min-h-full overflow-hidden bg-[#fdf7ee] px-4 py-14 dark:bg-background">
+        <div className="mx-auto max-w-lg rounded-3xl border border-white/80 bg-white/90 p-6 text-center shadow-lg shadow-rose-200/30 dark:border-border dark:bg-card">
           <p className="text-sm text-muted-foreground">{err ?? "Nothing to show yet."}</p>
-          <Link className="mt-6 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline" to="/campaigns">
+          <Link
+            className="mt-6 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+            to="/campaigns"
+          >
             Back to campaigns
           </Link>
         </div>
@@ -440,34 +478,81 @@ export default function CampaignPage() {
     );
   }
 
+  const showProgress = nodeIdsOrdered.length > 0;
+
   return (
-    <div className="min-h-full bg-[#fbfaf6] pb-16 dark:bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="min-w-0">
-            <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Campaigns
-            </Link>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">Creator campaign workspace</h1>
-              {meta.status ? (
-                <Badge variant="outline" className="gap-1 rounded-full text-[11px]">
-                  <CheckCircle2 className="h-3 w-3 text-primary" />
-                  {meta.status}
-                </Badge>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Link to="/studio" className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold shadow-sm">
-              Studio
-            </Link>
+    <div className="min-h-full overflow-hidden bg-[#fdf7ee] pb-16 font-sans text-foreground antialiased dark:bg-background">
+      <div className="pointer-events-none fixed inset-0 -z-20 dark:opacity-50">
+        <div className="absolute -top-32 left-[-10%] h-[480px] w-[480px] rounded-full bg-fuchsia-300/40 blur-[140px]" />
+        <div className="absolute top-0 right-[-10%] h-[520px] w-[520px] rounded-full bg-amber-300/40 blur-[160px]" />
+        <div className="absolute bottom-[-10%] left-[20%] h-[420px] w-[420px] rounded-full bg-emerald-300/35 blur-[140px]" />
+      </div>
+
+      <header className="relative z-30 mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5">
+        <div className="min-w-0">
+          <Link
+            to="/campaigns"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-600 hover:text-zinc-950 dark:text-muted-foreground dark:hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Campaigns
+          </Link>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-950 md:text-xl dark:text-foreground">
+              Creator campaign workspace
+            </h1>
+            {meta.status ? (
+              <Badge variant="outline" className="gap-1 rounded-full text-[11px]">
+                <CheckCircle2 className="h-3 w-3 text-primary" />
+                {meta.status}
+              </Badge>
+            ) : null}
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            to="/"
+            className="hidden h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white sm:inline-flex dark:border-border dark:bg-card dark:text-foreground"
+          >
+            Home
+          </Link>
+          <Link
+            to="/studio"
+            className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white dark:border-border dark:bg-card dark:text-foreground"
+          >
+            Studio
+          </Link>
+        </div>
       </header>
-      <CampaignWorkspace model={model} runId={runId} />
+
+      {showProgress ? (
+        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-4">
+          <div className="overflow-hidden rounded-[1.5rem] border border-white/70 bg-white/85 shadow-lg shadow-rose-200/30 backdrop-blur dark:border-border dark:bg-card/95">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/60 px-3 py-2 dark:border-border">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-fuchsia-600">Run progress</span>
+              {busy ? (
+                <Badge variant="outline" className="animate-pulse border-primary/35 text-[10px] normal-case">
+                  Running
+                </Badge>
+              ) : null}
+              {meta.error ? (
+                <span className="max-w-[min(320px,70vw)] truncate text-[11px] text-destructive" title={meta.error}>
+                  {meta.error}
+                </span>
+              ) : null}
+            </div>
+            <HorizontalRunProgress
+              nodeIdsOrdered={nodeIdsOrdered}
+              nodeTypesById={nodeTypesById}
+              nodeRunUi={runUi}
+              busy={busy}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <CampaignWorkspace model={model} runId={runId} runStatus={meta.status} />
     </div>
   );
 }

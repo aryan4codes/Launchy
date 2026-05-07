@@ -15,14 +15,21 @@ import {
   Stars,
   Wand2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import { IntegrationPill } from "@/components/marketing/IntegrationPill";
 import { ScrollReveal, StaggerItem, StaggerReveal } from "@/components/motion/ScrollReveal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { startCreatorRun } from "@/lib/api";
+import {
+  listSavedCampaigns,
+  listSavedPersonas,
+  type SavedCampaignSnippet,
+  type SavedPersonaSnippet,
+} from "@/lib/creatorContextMemory";
 import { MARKETING_INTEGRATIONS } from "@/lib/integrationBrands";
 
 const CAMPAIGN_LOGO_ROW_1 = MARKETING_INTEGRATIONS.slice(0, 6);
@@ -126,8 +133,8 @@ function PersonaPreviewCard({
           ))}
         </div>
         <div className="mt-6 rounded-2xl border border-dashed border-fuchsia-300/50 bg-white/65 p-4 text-sm text-zinc-800">
-          <span className="font-semibold text-zinc-950">Coming soon:</span> persona storage and live campaign generation.
-          Use this shell to shape the creator brief before opening the workflow studio.
+          <span className="font-semibold text-zinc-950">Next:</span> start a live run below — your campaign opens on the next
+          page with step-by-step progress.
         </div>
       </div>
     </div>
@@ -135,10 +142,17 @@ function PersonaPreviewCard({
 }
 
 export default function CampaignLandingPage() {
+  const navigate = useNavigate();
   const [niche, setNiche] = useState("");
   const [audience, setAudience] = useState("");
   const [context, setContext] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
+  const [createImages, setCreateImages] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startErr, setStartErr] = useState<string | null>(null);
+  const [priorContext, setPriorContext] = useState("");
+  const [savedPersonas, setSavedPersonas] = useState<SavedPersonaSnippet[]>([]);
+  const [savedCampaigns, setSavedCampaigns] = useState<SavedCampaignSnippet[]>([]);
   const [selectedTones, setSelectedTones] = useState<string[]>(["educational", "sharp"]);
   const [selectedFormats, setSelectedFormats] = useState<string[]>(["TikTok scripts", "Instagram carousels"]);
 
@@ -150,6 +164,52 @@ export default function CampaignLandingPage() {
 
   const toggle = (value: string, values: string[], setValues: (next: string[]) => void) => {
     setValues(values.includes(value) ? values.filter((item) => item !== value) : [...values, value]);
+  };
+
+  useEffect(() => {
+    setSavedPersonas(listSavedPersonas());
+    setSavedCampaigns(listSavedCampaigns());
+  }, []);
+
+  const appendPersonaMemory = (id: string) => {
+    if (!id) return;
+    const p = savedPersonas.find((x) => x.id === id);
+    if (!p) return;
+    setPriorContext((prev) => `${prev}${prev ? "\n\n" : ""}[Saved persona: ${p.label}]\n${p.summary}`);
+  };
+
+  const appendCampaignMemory = (id: string) => {
+    if (!id) return;
+    const c = savedCampaigns.find((x) => x.id === id);
+    if (!c) return;
+    setPriorContext((prev) => `${prev}${prev ? "\n\n" : ""}[Saved campaign: ${c.label}]\n${c.summary}`);
+  };
+
+  const onStartCampaign = async () => {
+    const topic = niche.trim();
+    if (!topic) {
+      setStartErr("Add your niche or topic first.");
+      return;
+    }
+    setStartErr(null);
+    setStarting(true);
+    try {
+      const { run_id } = await startCreatorRun({
+        topic,
+        create_images: createImages,
+        audience: audience.trim() || undefined,
+        creator_persona: context.trim() || undefined,
+        tone_traits: selectedTones,
+        content_formats: selectedFormats,
+        instagram_url: instagramUrl.trim() || undefined,
+        prior_context: priorContext.trim() || undefined,
+      });
+      navigate(`/campaigns/${encodeURIComponent(run_id)}`);
+    } catch (e) {
+      setStartErr(e instanceof Error ? e.message : "Could not start campaign.");
+    } finally {
+      setStarting(false);
+    }
   };
 
   return (
@@ -173,8 +233,14 @@ export default function CampaignLandingPage() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Link
+            to="/"
+            className="hidden h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white sm:inline-flex dark:border-border dark:bg-card dark:text-foreground"
+          >
+            Home
+          </Link>
+          <Link
             to="/studio"
-            className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white"
+            className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white dark:border-border dark:bg-card dark:text-foreground"
           >
             Studio
           </Link>
@@ -364,6 +430,59 @@ export default function CampaignLandingPage() {
                   </div>
                 </div>
 
+                <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/40 p-4 dark:border-border dark:bg-muted/30">
+                  <div className="text-sm font-semibold text-zinc-950 dark:text-foreground">Saved memory (this browser)</div>
+                  <p className="mt-1 text-xs leading-5 text-zinc-600 dark:text-muted-foreground">
+                    Reuse summaries from past runs. Save them on the campaign page after a run finishes.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <label className="grid gap-1 text-xs font-medium text-zinc-800 dark:text-foreground">
+                      Add persona memory
+                      <select
+                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-border dark:bg-background"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          appendPersonaMemory(v);
+                          e.target.value = "";
+                        }}
+                      >
+                        <option value="">Choose…</option>
+                        {savedPersonas.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1 text-xs font-medium text-zinc-800 dark:text-foreground">
+                      Add campaign memory
+                      <select
+                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-border dark:bg-background"
+                        defaultValue=""
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          appendCampaignMemory(v);
+                          e.target.value = "";
+                        }}
+                      >
+                        <option value="">Choose…</option>
+                        {savedCampaigns.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <Textarea
+                    value={priorContext}
+                    onChange={(e) => setPriorContext(e.target.value)}
+                    placeholder="Saved snippets stack here. Edit before generating."
+                    className="mt-3 min-h-24 border-indigo-200 bg-white text-sm dark:border-border dark:bg-background"
+                  />
+                </div>
+
                 <label className="grid gap-2 text-sm font-medium text-zinc-950">
                   <span className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-pink-500" /> Optional Instagram profile URL
@@ -385,19 +504,38 @@ export default function CampaignLandingPage() {
                   </span>
                 </label>
 
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-rose-200/80 bg-white/90 p-4 text-left shadow-sm ring-1 ring-rose-100/60 transition hover:bg-white dark:border-border dark:bg-card dark:ring-border">
+                  <input
+                    type="checkbox"
+                    checked={createImages}
+                    onChange={(e) => setCreateImages(e.target.checked)}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-rose-300 text-fuchsia-600 focus:ring-fuchsia-400"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold text-zinc-950 dark:text-foreground">Also generate images</span>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600 dark:text-muted-foreground">
+                      Creates hero visuals for your campaign. Slower and uses image generation capacity.
+                    </p>
+                  </div>
+                </label>
+
+                {startErr ? <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{startErr}</p> : null}
+
                 <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row">
+                  <button
+                    type="button"
+                    disabled={starting}
+                    onClick={() => void onStartCampaign()}
+                    className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-500 to-orange-400 px-6 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {starting ? "Starting…" : "Generate my campaign"}
+                    {!starting ? <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" /> : null}
+                  </button>
                   <Link
                     to={studioQuery}
-                    className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-500 to-orange-400 px-6 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 transition hover:-translate-y-0.5"
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted"
                   >
-                    Use this persona
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                  </Link>
-                  <Link
-                    to="/studio"
-                    className="inline-flex h-11 items-center justify-center rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-50"
-                  >
-                    Try with a topic in Studio
+                    Open in Studio
                   </Link>
                 </div>
               </div>

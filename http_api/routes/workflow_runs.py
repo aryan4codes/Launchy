@@ -5,12 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
 from workflow.engine import WorkflowEngine
-from workflow.schema import WorkflowRunCreate
+from workflow.schema import WorkflowRunCreate, WorkflowSpec
 
 from http_api.deps import workflow_hub_singleton
 from http_api.workflow_storage import load_workflow
@@ -21,6 +23,23 @@ _LOG = logging.getLogger(__name__)
 
 def _run_meta_path(run_id: str) -> Path:
     return Path("outputs") / run_id / "workflow_run.json"
+
+
+def schedule_workflow_run(spec: WorkflowSpec, inputs: dict[str, Any]) -> str:
+    """Start async workflow execution; returns ``run_id`` immediately."""
+    run_id = str(uuid.uuid4())
+    hub = workflow_hub_singleton()
+    engine = WorkflowEngine(hub=hub, use_memory=True)
+    payload = dict(inputs)
+
+    async def runner() -> None:
+        try:
+            await engine.execute(spec, run_id, payload)
+        except Exception:
+            _LOG.exception("workflow run failed")
+
+    asyncio.create_task(runner())
+    return run_id
 
 
 @router.post("")
@@ -35,21 +54,7 @@ async def start_run(body: WorkflowRunCreate) -> dict[str, str]:
         except FileNotFoundError:
             raise HTTPException(status_code=404, detail="workflow not found")
 
-    import uuid
-
-    run_id = str(uuid.uuid4())
-    hub = workflow_hub_singleton()
-    engine = WorkflowEngine(hub=hub, use_memory=True)
-
-    inputs = dict(body.inputs)
-
-    async def runner() -> None:
-        try:
-            await engine.execute(spec, run_id, inputs)
-        except Exception:
-            _LOG.exception("workflow run failed")
-
-    asyncio.create_task(runner())
+    run_id = schedule_workflow_run(spec, dict(body.inputs))
     return {"run_id": run_id}
 
 

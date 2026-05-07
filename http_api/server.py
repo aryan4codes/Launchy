@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from http_api.routes import creator_runs as creator_runs_routes
 from http_api.routes import memory as memory_routes
 from http_api.routes import runs as runs_routes
 from http_api.routes import workflow_runs as wf_runs_routes
@@ -30,6 +31,7 @@ app.include_router(runs_routes.router, prefix="/runs", tags=["runs"])
 app.include_router(memory_routes.router, prefix="/memory", tags=["memory"])
 app.include_router(workflows_routes.router, prefix="/workflows", tags=["workflows"])
 app.include_router(wf_runs_routes.router, prefix="/workflow-runs", tags=["workflow-runs"])
+app.include_router(creator_runs_routes.router, prefix="/creator-runs", tags=["creator-runs"])
 _outputs_root = Path("outputs")
 _outputs_root.mkdir(parents=True, exist_ok=True)
 app.mount("/artifacts", StaticFiles(directory=str(_outputs_root)), name="run_artifacts")

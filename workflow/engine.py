@@ -71,6 +71,30 @@ def topological_order(nodes: list[NodeSpec], edges: list) -> list[str]:
     return out
 
 
+def topological_levels(nodes: list[NodeSpec], edges: list) -> list[list[str]]:
+    """Partition nodes into levels: each level can run in parallel (all deps in earlier levels)."""
+    node_ids = [n.id for n in nodes]
+    known = set(node_ids)
+    preds: dict[str, list[str]] = defaultdict(list)
+    for e in edges:
+        if e.source not in known or e.target not in known:
+            continue
+        preds[e.target].append(e.source)
+
+    remaining = set(node_ids)
+    completed: set[str] = set()
+    levels: list[list[str]] = []
+    while remaining:
+        ready = [nid for nid in node_ids if nid in remaining and all(p in completed for p in preds[nid])]
+        if not ready:
+            raise ValueError("Workflow graph has a cycle or broken edge endpoints.")
+        levels.append(ready)
+        for nid in ready:
+            remaining.remove(nid)
+            completed.add(nid)
+    return levels
+
+
 def _validate_node_types(spec: WorkflowSpec) -> None:
     known = set(schemas_by_type().keys())
     for n in spec.nodes:
@@ -141,7 +165,8 @@ class WorkflowEngine:
         _validate_node_types(spec)
         if _detect_cycle(spec.nodes, spec.edges):
             raise ValueError("Workflow contains a cycle.")
-        order = topological_order(spec.nodes, spec.edges)
+        levels = topological_levels(spec.nodes, spec.edges)
+        order = [nid for tier in levels for nid in tier]
 
         run_dir = self.output_root / run_id
         self._current_run_dir = run_dir
@@ -179,82 +204,98 @@ class WorkflowEngine:
         err: str | None = None
 
         try:
-            for nid in order:
-                node = node_by_id[nid]
-                upstream = {p: outputs[p] for p in preds[nid] if p in outputs}
-                ctx = NodeExecContext(
-                    run_id=run_id,
-                    workflow_inputs=inputs,
-                    upstream_outputs=upstream,
-                    completed_outputs=dict(outputs),
-                    node=node,
-                    outputs_base=run_dir,
-                    memory_collection=collection,
-                )
-                await self._emit(
-                    run_id,
-                    RunEvent(type="node_started", run_id=run_id, node_id=nid, payload={}),
-                )
-                handler = get_handler(node.type)
+            for level in levels:
+                id_rank = {nid: i for i, nid in enumerate(order)}
 
-                def _sync_call() -> dict[str, Any]:
-                    return handler(ctx, dict(node.params))
-
-                try:
-                    out = await asyncio.to_thread(_sync_call)
-                except Exception as e:
-                    err = str(e)
+                async def _run_one(nid: str) -> tuple[str, dict[str, Any]]:
+                    node = node_by_id[nid]
+                    upstream = {p: outputs[p] for p in preds[nid] if p in outputs}
+                    ctx = NodeExecContext(
+                        run_id=run_id,
+                        workflow_inputs=inputs,
+                        upstream_outputs=upstream,
+                        completed_outputs=dict(outputs),
+                        node=node,
+                        outputs_base=run_dir,
+                        memory_collection=collection,
+                    )
                     await self._emit(
                         run_id,
-                        RunEvent(
-                            type="node_failed",
-                            run_id=run_id,
-                            node_id=nid,
-                            payload={"error": err},
-                        ),
+                        RunEvent(type="node_started", run_id=run_id, node_id=nid, payload={}),
                     )
+                    handler = get_handler(node.type)
+
+                    def _sync_call() -> dict[str, Any]:
+                        return handler(ctx, dict(node.params))
+
+                    try:
+                        out = await asyncio.to_thread(_sync_call)
+                    except Exception as exc:
+                        err_s = str(exc)
+                        await self._emit(
+                            run_id,
+                            RunEvent(
+                                type="node_failed",
+                                run_id=run_id,
+                                node_id=nid,
+                                payload={"error": err_s},
+                            ),
+                        )
+                        self._write_node_artifact(
+                            run_dir,
+                            nid,
+                            {"node_id": nid, "type": node.type, "error": err_s, "output": None},
+                        )
+                        raise
+
                     self._write_node_artifact(
                         run_dir,
                         nid,
-                        {"node_id": nid, "type": node.type, "error": err, "output": None},
+                        {"node_id": nid, "type": node.type, "error": None, "output": out},
                     )
                     await self._emit(
                         run_id,
                         RunEvent(
-                            type="run_finished",
+                            type="node_finished",
                             run_id=run_id,
-                            payload={"error": err, "failed_node": nid},
+                            node_id=nid,
+                            payload={"output": out},
                         ),
                     )
-                    self._write_meta(
-                        run_dir,
-                        run_id=run_id,
-                        status=RunStatus.failed,
-                        spec=spec,
-                        inputs=inputs,
-                        node_outputs=outputs,
-                        final_output=None,
-                        error=err,
-                    )
-                    raise
+                    return nid, out
 
-                outputs[nid] = out
-                self._write_node_artifact(
-                    run_dir,
-                    nid,
-                    {"node_id": nid, "type": node.type, "error": None, "output": out},
+                tier = sorted(level, key=lambda x: id_rank[x])
+                results = await asyncio.gather(
+                    *(_run_one(nid) for nid in tier),
+                    return_exceptions=True,
                 )
-                await self._emit(
-                    run_id,
-                    RunEvent(
-                        type="node_finished",
-                        run_id=run_id,
-                        node_id=nid,
-                        payload={"output": out},
-                    ),
-                )
-                if node.type == "output.pieces":
-                    final_payload = out
+                for nid, res in zip(tier, results):
+                    if isinstance(res, Exception):
+                        err = str(res)
+                        await self._emit(
+                            run_id,
+                            RunEvent(
+                                type="run_finished",
+                                run_id=run_id,
+                                payload={"error": err, "failed_node": nid},
+                            ),
+                        )
+                        self._write_meta(
+                            run_dir,
+                            run_id=run_id,
+                            status=RunStatus.failed,
+                            spec=spec,
+                            inputs=inputs,
+                            node_outputs=outputs,
+                            final_output=None,
+                            error=err,
+                        )
+                        raise res
+                    finished_id, out = res
+                    outputs[finished_id] = out
+                    node = node_by_id[finished_id]
+                    if node.type == "output.pieces":
+                        final_payload = out
 
             if final_payload is None:
                 final_payload = {"nodes": outputs}

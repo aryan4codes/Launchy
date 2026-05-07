@@ -1,6 +1,7 @@
 import 'reactflow/dist/style.css'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   Background,
@@ -29,6 +30,7 @@ import { RunUiProvider, type NodeRunUi } from '@/components/workflow/runUi'
 import { WorkflowTopBar } from '@/components/workflow/WorkflowTopBar'
 import { StudioSkeleton } from '@/components/workflow/StudioSkeleton'
 import { Skeleton } from '@/components/ui/skeleton'
+import { progressGraphFromRunPayload } from '@/hooks/useWorkflowRunLive'
 import {
   cloneTemplate,
   createWorkflow,
@@ -92,6 +94,74 @@ function specToFlow(spec: WorkflowSpecJson): { nodes: Node[]; edges: import('rea
 function defaultConfigureNodeId(nodes: Node[]): string | null {
   const trigger = nodes.find((n) => (n.data as WorkflowNodeData).wfType === 'trigger.input')
   return trigger?.id ?? nodes[0]?.id ?? null
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+}
+
+function inputValueToFormString(v: unknown): string {
+  if (v == null) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  try {
+    return JSON.stringify(v)
+  } catch {
+    return String(v)
+  }
+}
+
+/** Map run inputs to run-form field strings (topic lives on trigger.default_topic). */
+function extractInputsBootstrap(inputs: unknown): Record<string, string> {
+  if (!isRecord(inputs)) return {}
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(inputs)) {
+    if (k === 'topic') continue
+    out[k] = inputValueToFormString(v)
+  }
+  return out
+}
+
+function injectTriggerTopic(spec: WorkflowSpecJson, topic: string): WorkflowSpecJson {
+  return {
+    ...spec,
+    nodes: spec.nodes.map((node) => {
+      if (node.type !== 'trigger.input') return node
+      const data = { ...(node.data ?? {}), default_topic: topic }
+      return { ...node, data }
+    }),
+  }
+}
+
+function workflowSpecFromRunPayload(payload: unknown): WorkflowSpecJson | null {
+  if (!isRecord(payload) || !isRecord(payload.workflow)) return null
+  const w = payload.workflow
+  if (typeof w.name !== 'string') return null
+  if (!Array.isArray(w.nodes) || !Array.isArray(w.edges)) return null
+  for (const n of w.nodes) {
+    if (!isRecord(n) || typeof n.id !== 'string' || typeof n.type !== 'string') return null
+  }
+  for (const e of w.edges) {
+    if (!isRecord(e) || typeof e.source !== 'string' || typeof e.target !== 'string') return null
+  }
+  return {
+    id: typeof w.id === 'string' ? w.id : undefined,
+    name: w.name,
+    nodes: w.nodes as WorkflowSpecJson['nodes'],
+    edges: w.edges as WorkflowSpecJson['edges'],
+  }
+}
+
+function runUiFromRunPayload(p: unknown): Record<string, NodeRunUi> {
+  const { nodeIdsOrdered } = progressGraphFromRunPayload(p)
+  if (!isRecord(p) || !isRecord(p.node_outputs)) return {}
+  const no = p.node_outputs as Record<string, unknown>
+  const next: Record<string, NodeRunUi> = {}
+  for (const id of nodeIdsOrdered) {
+    if (!(id in no) || no[id] == null) continue
+    next[id] = { status: 'done' }
+  }
+  return next
 }
 
 function flowToSpec(
@@ -232,6 +302,7 @@ function FlowCanvasDnD({
 }
 
 export default function WorkflowStudio() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [name, setName] = useState('Untitled workflow')
   const [workflowId, setWorkflowId] = useState<string | undefined>(undefined)
   const [nodes, setNodes, onNodesChange] = useNodesState([])
@@ -251,6 +322,7 @@ export default function WorkflowStudio() {
   const [openingWorkflow, setOpeningWorkflow] = useState(false)
 
   const rfInstanceRef = useRef<ReactFlowInstance | null>(null)
+  const inputsBootstrapRef = useRef<Record<string, string> | null>(null)
 
   const inputKeysArr = useMemo(() => inferWorkflowInputKeys(nodes), [nodes])
   const keysForRunForm = useMemo(() => inputKeysArr.filter((k) => k !== 'topic'), [inputKeysArr])
@@ -267,14 +339,20 @@ export default function WorkflowStudio() {
   useEffect(() => {
     const inferred = keysSig ? keysSig.split('|').filter(Boolean) : []
     const keysLive = inferred.length ? inferred : inferWorkflowInputKeys(nodes)
+    const bootstrap = inputsBootstrapRef.current
     setInputsForm((prev) => {
       const n: Record<string, string> = {}
       for (const k of keysLive) {
         if (k === 'topic') continue
-        n[k] = prev[k] ?? ''
+        if (bootstrap && Object.prototype.hasOwnProperty.call(bootstrap, k)) {
+          n[k] = bootstrap[k]!
+        } else {
+          n[k] = prev[k] ?? ''
+        }
       }
       return n
     })
+    if (bootstrap) inputsBootstrapRef.current = null
   }, [keysSig, nodes])
 
   useEffect(() => {
@@ -307,6 +385,76 @@ export default function WorkflowStudio() {
       cancelled = true
     }
   }, [])
+
+  const runSearchParam = searchParams.get('run')?.trim() ?? ''
+
+  useEffect(() => {
+    if (!studioReady || !runSearchParam) return
+
+    const ac = new AbortController()
+    const runId = runSearchParam
+
+    const clearRunParam = () => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('run')
+          return next
+        },
+        { replace: true },
+      )
+    }
+
+    void (async () => {
+      setOpeningWorkflow(true)
+      try {
+        const payload = await getWorkflowRun(runId)
+        if (ac.signal.aborted) return
+
+        const wf = workflowSpecFromRunPayload(payload)
+        if (!wf) {
+          window.alert('This run does not include a workflow snapshot.')
+          clearRunParam()
+          return
+        }
+
+        const rawInputs = isRecord(payload) && 'inputs' in payload ? (payload as { inputs?: unknown }).inputs : undefined
+        const topic = isRecord(rawInputs) && typeof rawInputs.topic === 'string' ? rawInputs.topic : ''
+        const spec = injectTriggerTopic(wf, topic)
+        const { nodes: n, edges: ed } = specToFlow(spec)
+
+        inputsBootstrapRef.current = extractInputsBootstrap(rawInputs)
+        setEdges(ed)
+        setNodes(n)
+        setWorkflowId(spec.id ?? wf.id ?? undefined)
+        setName(wf.name)
+        setSelectedId(defaultConfigureNodeId(n))
+        setInspectorOpen(true)
+        setMobileStudioTab('inspector')
+        setRunPayload(payload)
+        setRunUi(runUiFromRunPayload(payload))
+        setRunLogLines([])
+        try {
+          setStored(await listStoredWorkflows())
+        } catch {
+          /* keep prior list */
+        }
+        clearRunParam()
+        setTimeout(() => rfInstanceRef.current?.fitView({ padding: 0.15 }), 150)
+      } catch (e) {
+        if (ac.signal.aborted) return
+        console.error(e)
+        window.alert(e instanceof Error ? e.message : 'Could not load this run into Studio.')
+        clearRunParam()
+      } finally {
+        if (!ac.signal.aborted) setOpeningWorkflow(false)
+      }
+    })()
+
+    return () => {
+      ac.abort()
+    }
+  }, [studioReady, runSearchParam, setSearchParams, setNodes, setEdges])
 
   const commitWorkflowToServer = useCallback(async (): Promise<string | undefined> => {
     const spec = flowToSpec(nodes, edges, name, workflowId)

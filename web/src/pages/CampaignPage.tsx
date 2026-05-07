@@ -518,7 +518,8 @@ export default function CampaignPage() {
             Home
           </Link>
           <Link
-            to="/studio"
+            to={`/studio?run=${encodeURIComponent(runId)}`}
+            title="Open this campaign's workflow on the canvas with the same inputs and node settings"
             className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white dark:border-border dark:bg-card dark:text-foreground"
           >
             Studio

@@ -20,10 +20,6 @@ export default defineConfig(({ mode }) => {
   const logoDevKey =
     (fromMode.NEXT_PUBLIC_LOGO_DEV_KEY || fromMode.VITE_LOGO_DEV_KEY || "").trim() ||
     (fromProd.NEXT_PUBLIC_LOGO_DEV_KEY || fromProd.VITE_LOGO_DEV_KEY || "").trim();
-  const configuredBase = (fromMode.VITE_WEB_BASE_PATH || "").trim();
-  const base = configuredBase
-    ? `/${configuredBase.replace(/^\/+|\/+$/g, "")}/`
-    : "/app/";
 
   return {
     plugins: [react()],
@@ -33,7 +29,7 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.NEXT_PUBLIC_LOGO_DEV_KEY": JSON.stringify(logoDevKey),
       "import.meta.env.VITE_LOGO_DEV_KEY": JSON.stringify(logoDevKey),
     },
-    base,
+    base: "/",
     build: {
       rollupOptions: {
         output: {

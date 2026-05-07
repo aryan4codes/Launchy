@@ -369,8 +369,8 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     id: "avcm_classic",
     label: "Launchy Virality",
     description:
-      "Reddit + Serper + Instagram creator posts (scout → Apify) flow into trend synthesis, persona synthesis, and campaign packaging. Remove the Instagram block or switch it to hashtag-only in the inspector if you want a different scrape.",
-    tagline: "Research, trend synthesis, personas, and campaign packaging",
+      "Reddit + Serper + Instagram creator posts (scout → Apify) → psych → angles → copy → creative brief → score. Remove the Instagram block or switch it to hashtag-only in the inspector if you want a different scrape.",
+    tagline: "Research, angles, copy, and scoring",
     badge: "Recommended",
     category: "general",
   },

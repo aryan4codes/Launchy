@@ -19,3 +19,4 @@ memory/performance_db/*
 .vercel
 
 /workflows/stored
+/web/.env.production

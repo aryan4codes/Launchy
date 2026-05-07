@@ -687,6 +687,12 @@ export function extractCampaignDisplay(payload: unknown): CampaignDisplayModel {
   const campaignBigIdea = stringValue(
     valueByKeys(packRecord, ["campaign_big_idea", "campaignBigIdea", "big_idea", "bigIdea", "idea"]),
   );
+  const selectedTrendValue = valueByKeys(packRecord, ["selected_trend", "selectedTrend"]);
+  const selectedTrendTitle =
+    (isRecord(selectedTrendValue)
+      ? stringValue(valueByKeys(selectedTrendValue, ["title", "trend", "name", "opportunity"]))
+      : stringValue(selectedTrendValue)) ??
+    stringValue(valueByKeys(packRecord, ["trend_title", "trendTitle"]));
 
   return {
     hasCampaignShape: campaignRecords.length > 0,
@@ -696,9 +702,7 @@ export function extractCampaignDisplay(payload: unknown): CampaignDisplayModel {
       stringValue(valueByKeys(packRecord, ["top_recommendation", "topRecommendation", "recommendation"])) ??
       campaignBigIdea,
     campaignBigIdea,
-    selectedTrendTitle: stringValue(
-      valueByKeys(packRecord, ["selected_trend", "selectedTrend", "trend_title", "trendTitle"]),
-    ),
+    selectedTrendTitle,
     trendOpportunities,
     platformAssets,
     visualDirections,

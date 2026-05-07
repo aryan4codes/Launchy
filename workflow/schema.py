@@ -88,10 +88,19 @@ class RedditSourceParams(BaseModel):
 class InstagramSourceParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    scraping_mode: Literal["hashtags", "creator_profiles"] = Field(
+        default="hashtags",
+        description=(
+            "hashtags: Apify hashtag search from hashtags_template. "
+            "creator_profiles: recent posts from usernames in usernames_template (e.g. upstream scout)."
+        ),
+    )
     hashtags_template: str = (
         "{{ instagram_hashtags | default(topic | replace(' ', ','), true) }}"
     )
+    usernames_template: str = "{{ upstream['instagram_creator_scout']['text'] | trim }}"
     result_limit: Annotated[int, Field(ge=1, le=50)] = 12
+    posts_per_profile: Annotated[int, Field(ge=5, le=50)] = 12
 
 
 class SerperSourceParams(BaseModel):
@@ -134,6 +143,127 @@ class OutputPiecesParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     include_node_metadata: bool = True
+    campaign_node_id: str | None = Field(
+        default=None,
+        description=(
+            "Optional node id whose JSON/text output should be parsed as the creator campaign result "
+            "and exposed on final_output.campaign_result."
+        ),
+    )
+
+
+class EvidenceItem(BaseModel):
+    """A source-backed proof point shown in the campaign evidence drawer."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    source: str
+    title: str
+    url: str | None = None
+    metric: str | None = None
+    quote_or_summary: str
+    relevance: str
+
+
+class CreatorPersona(BaseModel):
+    """Reusable creator voice and positioning profile for campaign generation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    voice_summary: str
+    tone_traits: list[str] = Field(default_factory=list)
+    humor_style: str | None = None
+    content_formats: list[str] = Field(default_factory=list)
+    audience: str
+    recurring_themes: list[str] = Field(default_factory=list)
+    visual_style: str | None = None
+    caption_patterns: list[str] = Field(default_factory=list)
+    do_say: list[str] = Field(default_factory=list)
+    do_not_say: list[str] = Field(default_factory=list)
+    example_hooks: list[str] = Field(default_factory=list)
+    persona_prompt: str
+    instagram_profile: str | None = Field(
+        default=None,
+        description="Optional public Instagram username or profile URL used with consent to infer style.",
+    )
+
+
+class TrendOpportunity(BaseModel):
+    """A ranked trend that can become a creator-ready campaign."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    why_now: str
+    audience: str
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+    confidence: Annotated[float, Field(ge=0, le=1)]
+    risk: str | None = None
+    recommended_platforms: list[str] = Field(default_factory=list)
+
+
+class PlatformAsset(BaseModel):
+    """A platform-native content asset in the selected campaign."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    platform: str
+    format: str
+    hook: str
+    body: str
+    script: str | None = None
+    caption: str | None = None
+    cta: str
+    production_notes: str | None = None
+
+
+class VisualAsset(BaseModel):
+    """Visual direction or generation prompt for the campaign."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    asset_type: str
+    concept: str
+    prompt: str
+    on_screen_text: list[str] = Field(default_factory=list)
+    production_notes: str | None = None
+
+
+class PostingPlanItem(BaseModel):
+    """One step in the recommended publish sequence."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    order: int = Field(ge=1)
+    platform: str
+    timing: str
+    asset_ref: str
+    purpose: str
+    repurposing_notes: str | None = None
+
+
+class CampaignPack(BaseModel):
+    """The selected trend turned into platform assets, visuals, and a posting plan."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    selected_trend: TrendOpportunity
+    campaign_big_idea: str
+    platform_assets: list[PlatformAsset] = Field(default_factory=list)
+    visual_assets: list[VisualAsset] = Field(default_factory=list)
+    posting_plan: list[PostingPlanItem] = Field(default_factory=list)
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+
+
+class CampaignResult(BaseModel):
+    """Creator-facing workflow result emitted by campaign templates."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    creator_persona: CreatorPersona
+    trend_opportunities: list[TrendOpportunity] = Field(default_factory=list)
+    campaign_pack: CampaignPack
+    markdown_summary: str | None = None
 
 
 # Leonardo Nano Banana 2 documented edge sizes (pixels). Invalid combinations silently

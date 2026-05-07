@@ -1,6 +1,6 @@
 {
   "id": "avcm_classic",
-  "name": "AVCM Viral Research & Content Pack",
+  "name": "AVCM Creator Campaign Pack",
   "nodes": [
     {
       "id": "in",
@@ -8,28 +8,46 @@
       "data": {
         "keys": [
           "topic",
-          "instagram_hashtags"
+          "platforms",
+          "creator_profile",
+          "creator_persona",
+          "creator_type",
+          "audience",
+          "tone_traits",
+          "content_formats",
+          "goals",
+          "topics_to_avoid",
+          "instagram_hashtags",
+          "instagram_profile_url",
+          "instagram_username",
+          "instagram_profile_consent"
         ]
       },
-      "position": {
-        "x": 0,
-        "y": 0
-      }
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "instagram_creator_scout",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Instagram Creator Scout",
+        "goal": "Identify public Instagram creator accounts audiences associate with the topic so their posts can be used as market evidence.",
+        "backstory": "You know creator-led niches and never invent handles. If unsure, return fewer real accounts rather than guessing.",
+        "task_description_template": "Topic: {{ topic }}\n\nReturn 5-8 Instagram usernames (handles only, no @, no URLs, no numbering) for public creator-led accounts educators or audiences follow for this topic. Mix educators, entertainers, practitioners, and commentators when possible.\n\nOutput one comma-separated line of usernames only.",
+        "expected_output": "Single comma-separated line of Instagram usernames, no spaces after commas, no other text."
+      },
+      "position": { "x": 220, "y": 170 }
     },
     {
       "id": "subreddit_researcher",
       "type": "agent.crewai",
       "data": {
         "role": "Reddit Research Strategist",
-        "goal": "Identify the most relevant and active subreddits where people discuss, complain about, or seek advice on the given topic.",
-        "backstory": "You are a Reddit power-user who knows every community by heart. You never hallucinate subreddit names — only return real, active communities. You understand that the best research comes from niche-specific communities, not just the obvious general ones.",
-        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out. Focus on communities where the target audience asks questions, vents frustrations, shares wins, and discusses trends related to '{{ topic }}'.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering. Just the list.\n\nExample format: studyabroad,college,expats,solotravel,digitalnomad,backpacking",
+        "goal": "Identify active subreddits where the topic's audience asks questions, vents, debates, and shares wins.",
+        "backstory": "You are a Reddit power-user. You return only real, active communities and prefer niche-specific discussion over generic viral noise.",
+        "task_description_template": "Topic: {{ topic }}\n\nIdentify 6-10 real, active subreddits where people passionate about or affected by this topic hang out.\n\nReturn ONLY a comma-separated list of subreddit names with no r/ prefix, no explanations, no numbering.",
         "expected_output": "A single line containing comma-separated subreddit names with no r/ prefix, no spaces after commas, no additional text."
       },
-      "position": {
-        "x": 220,
-        "y": 0
-      }
+      "position": { "x": 220, "y": 0 }
     },
     {
       "id": "reddit",
@@ -38,10 +56,7 @@
         "subreddits_template": "{{ upstream['subreddit_researcher']['text'] | trim }}",
         "limit": 15
       },
-      "position": {
-        "x": 460,
-        "y": -110
-      }
+      "position": { "x": 460, "y": -120 }
     },
     {
       "id": "serper",
@@ -49,171 +64,146 @@
       "data": {
         "query_template": "{{ topic }} recent news launches product announcements breakthrough 2026"
       },
-      "position": {
-        "x": 460,
-        "y": 110
-      }
+      "position": { "x": 460, "y": 40 }
     },
     {
       "id": "instagram",
       "type": "source.instagram",
       "data": {
+        "scraping_mode": "creator_profiles",
+        "usernames_template": "{{ upstream['instagram_creator_scout']['text'] | trim }}",
+        "posts_per_profile": 12,
         "hashtags_template": "{{ instagram_hashtags | default(topic | replace(' ', ','), true) }}",
         "result_limit": 12
       },
-      "position": {
-        "x": 460,
-        "y": 230
-      }
+      "position": { "x": 460, "y": 200 }
+    },
+    {
+      "id": "instagram_profile_source",
+      "type": "source.instagram",
+      "data": {
+        "scraping_mode": "creator_profiles",
+        "usernames_template": "{% set consent = instagram_profile_consent | default(false, true) %}{% if consent == true or consent == 'true' or consent == 'yes' or consent == '1' %}{{ instagram_username | default(instagram_profile_url | default('', true), true) }}{% endif %}",
+        "posts_per_profile": 12,
+        "hashtags_template": "{{ instagram_hashtags | default(topic | replace(' ', ','), true) }}",
+        "result_limit": 12
+      },
+      "position": { "x": 460, "y": 360 }
     },
     {
       "id": "merge_signals",
       "type": "transform.template",
       "data": {
-        "template": "DEEP RESEARCH BRIEF\n===================\nTopic: {{ topic }}\nTarget subreddits: {{ upstream['reddit']['subreddits'] }}\nPlatforms: {{ platforms | default('instagram,tiktok,linkedin,twitter') }}\n\n-- OUTPUT PRIORITY (for every downstream agent) --\n1. Surfacing **recent, concrete happenings** beats generic advice: new product launches, funding rounds, model/tool releases, research papers getting buzz, acquisitions, regulator moves — but ONLY when they appear below in Reddit/Serper/Instagram data.\n2. Name-check specific companies/products/papers/events when they are in the signals; invent nothing.\n3. Turn those facts into emotionally sharp hooks (“why this matters NOW for [audience]”) tied to '{{ topic }}'. Prefer Instagram captions/hashtags when the Instagram section lists real posts.\nIf the signals lack fresh news, say so briefly and pivot to evergreen pain + curiosity hooks grounded in threads/search/hashtag results.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}\n\n--- INSTAGRAM HASHTAG SIGNALS (Apify) ---\n{{ upstream['instagram']['text'] }}"
+        "template": "CREATOR CAMPAIGN RESEARCH BRIEF\n===============================\nTopic: {{ topic }}\nPlatforms: {{ platforms | default('TikTok, Instagram, LinkedIn, X', true) }}\nCreator profile: {{ creator_profile | default('Not provided', true) }}\nCreator persona input: {{ creator_persona | default('Not provided', true) }}\nCreator type: {{ creator_type | default('Not provided', true) }}\nAudience: {{ audience | default('Not provided', true) }}\nTone traits: {{ tone_traits | default('Not provided', true) }}\nFormats: {{ content_formats | default('Not provided', true) }}\nGoals: {{ goals | default('Not provided', true) }}\nTopics to avoid: {{ topics_to_avoid | default('None provided', true) }}\nInstagram profile consent: {{ instagram_profile_consent | default(false, true) }}\n\nUse the evidence below as proof, not as user-facing dumps. Prefer specific recent signals over generic advice. Name only companies, creators, products, papers, posts, or debates that appear in the evidence. If evidence is thin, mark confidence lower and use evergreen audience pain honestly.\n\n--- REDDIT COMMUNITY SIGNALS ---\n{{ upstream['reddit']['text'] }}\n\n--- WEB TREND RESEARCH ---\n{{ upstream['serper']['text'] }}\n\n--- INSTAGRAM MARKET CREATOR POSTS ---\n{{ upstream['instagram']['text'] }}\n\n--- OPTIONAL CREATOR PROFILE POSTS ---\n{{ upstream['instagram_profile_source']['text'] }}"
       },
-      "position": {
-        "x": 700,
-        "y": 0
-      }
+      "position": { "x": 720, "y": 80 }
     },
     {
-      "id": "psych",
+      "id": "trend_synthesizer",
       "type": "agent.crewai",
       "data": {
-        "role": "Viral Content Audience Psychologist",
-        "goal": "Map triggers and pains for '{{ topic }}' while highlighting what is **happening RIGHT NOW** in the niche (specific launches, debates, hype cycles) grounded only in signals.",
-        "backstory": "You specialize in tying audience emotion to timely context for social-first viral content — Instagram, TikTok, LinkedIn, and X. Extract named companies, tools, milestones, headlines, launches, backlash, hype — only what's supported by Reddit/Serper/Instagram text. Prefer recency cues (\"this month\", \"just dropped\") when signals support them.",
-        "task_description_template": "Topic: {{ topic }}\n\nResearch signals:\n{{ upstream['merge_signals']['text'] }}\n\nProduce a memo that merges psychology WITH timeliness:\n- List 5-10 **recent-happening snippets** lifted from signals (bullet: event + Why people care).\nIf signals have no usable recent specifics, explicitly write \"Limited recent specificity in feeds\" and derive evergreen hooks.",
-        "expected_output": "Structured memo: (A) Timeline / \"what's buzzing now\" (bullets citing signal evidence), (B) Emotional triggers tied to those events, (C) Pain points/desires/objections grounded in snippets, (D) Hooks that mention real names/topics from signals when relevant, (E) Forbidden: invent launches or unnamed \"big news\"."
+        "role": "Trend Opportunity Synthesizer",
+        "goal": "Distill research into 3-5 evidence-backed trend opportunities a creator could post about now.",
+        "backstory": "You turn raw Reddit, search, and Instagram signals into creator-friendly opportunity cards. You separate evidence from speculation and assign confidence conservatively.",
+        "task_description_template": "Topic: {{ topic }}\n\nResearch brief:\n{{ upstream['merge_signals']['text'] }}\n\nReturn strict JSON with one key: trend_opportunities. It must be an array of 3-5 objects matching this shape: title, why_now, audience, evidence, confidence, risk, recommended_platforms.\nEach evidence item must include: source, title, url, metric, quote_or_summary, relevance. Use null for missing url or metric. confidence is a number from 0 to 1.",
+        "expected_output": "Strict JSON object with trend_opportunities array only. No markdown."
       },
-      "position": {
-        "x": 920,
-        "y": 0
-      }
+      "position": { "x": 980, "y": -80 }
     },
     {
-      "id": "angles",
+      "id": "persona_synthesizer",
       "type": "agent.crewai",
       "data": {
-        "role": "Viral Content Strategist",
-        "goal": "Design 6 differentiated angles for '{{ topic }}' each anchored where possible by a concrete **recent headline, launch, breakthrough, startup, regulation, viral thread, paper, benchmark, meme** from signals.",
-        "backstory": "You obsess over timeliness and platform-native formats — carousels, threads, Reels hooks, LinkedIn essays. People share what feels live in the Zeitgeist — not evergreen platitudes. You translate named events into story angles creators can riff on honestly.",
-        "task_description_template": "Topic: {{ topic }}\n\nAudience psychology + timeliness memo:\n{{ upstream['psych']['text'] }}\n\nDesign **6 viral content angles**. For each angle specify which specific **signal-backed fact/tool/brand/debate/person** it leans on. If insufficient fresh facts existed in your upstream memo, mark that angle clearly as evergreen-fallback rooted in Reddit language.",
-        "expected_output": "6 numbered angles, each with: (1) Title, (2) Linked recent fact/tool/launch (quoted from memo or omit if none), (3) Emotional lever, (4) Platforms, (5) Rating 1-10 + rationale."
+        "role": "Creator Persona Synthesizer",
+        "goal": "Create a reusable CreatorPersona from onboarding fields and optional public Instagram profile evidence.",
+        "backstory": "You preserve the creator's actual voice. You infer only from provided inputs and public posts supplied with consent, and you keep profile analysis respectful and practical.",
+        "task_description_template": "Topic: {{ topic }}\n\nCreator and profile inputs:\n{{ upstream['merge_signals']['text'] }}\n\nReturn strict JSON matching CreatorPersona with keys: voice_summary, tone_traits, humor_style, content_formats, audience, recurring_themes, visual_style, caption_patterns, do_say, do_not_say, example_hooks, persona_prompt, instagram_profile.\nIf creator input is sparse, create a conservative starter persona from topic/audience and clearly reflect uncertainty in voice_summary/persona_prompt.",
+        "expected_output": "Strict CreatorPersona JSON only. No markdown."
       },
-      "position": {
-        "x": 1140,
-        "y": 0
-      }
+      "position": { "x": 980, "y": 220 }
     },
     {
-      "id": "copy",
+      "id": "campaign_strategist",
       "type": "agent.crewai",
       "data": {
-        "role": "Viral Social Media Copywriter",
-        "goal": "Write punchy copy for '{{ topic }}' whose hooks **borrow specificity** — real product names, paper titles, Reddit drama, benchmarks, timelines — ONLY when justified by upstream angles/memes.",
-        "backstory": "You write like someone who scrolled the same Reddit + Google results as your audience yesterday. You craft for social-first consumption: short sentences, white space, platform-native tone (conversational on TikTok, authoritative on LinkedIn, punchy on X). Insight density wins: one sharp named reference beats vague inspiration.",
-        "task_description_template": "Topic: {{ topic }}\n\nAngles (already tied to timeliness cues):\n{{ upstream['angles']['text'] }}\n\nFor each angle, write **2 variations**. Hooks must EITHER open with a concrete named recent detail from the memo OR deliberately say you're zooming evergreen if no fact fit — never invent news. Include a subtle \"why now\" framing when events exist.",
-        "expected_output": "Per angle → Variation A/B with platform labels: hook referencing specific named element when available, crisp body takeaway, conversational CTA. Flag any angle that had to stay evergreen-only."
+        "role": "Creator Campaign Strategist",
+        "goal": "Select the strongest trend opportunity and define a persona-aligned campaign big idea.",
+        "backstory": "You choose campaigns creators can actually ship: timely, specific, truthful, and aligned with the creator's voice and goals.",
+        "task_description_template": "Topic: {{ topic }}\nPlatforms: {{ platforms | default('TikTok, Instagram, LinkedIn, X', true) }}\n\nCreator persona JSON:\n{{ upstream['persona_synthesizer']['text'] }}\n\nTrend opportunities JSON:\n{{ upstream['trend_synthesizer']['text'] }}\n\nReturn strict JSON with: selected_trend (one full TrendOpportunity object copied from the trend list), campaign_big_idea, why_this_creator, audience_promise, risk_guardrails.",
+        "expected_output": "Strict campaign strategy JSON only. No markdown."
       },
-      "position": {
-        "x": 1360,
-        "y": 0
-      }
+      "position": { "x": 1220, "y": 60 }
     },
     {
-      "id": "creative_brief",
+      "id": "platform_campaign_assets",
       "type": "agent.crewai",
       "data": {
-        "role": "Viral Social Creative Director",
-        "goal": "Make each '{{ topic }}' piece production-ready visually, emphasizing **screenshots, overlays, screenshots of headlines, carousel quotes, trending sound parity** around the factual hook used.",
-        "backstory": "You direct social-first viral content: vertical video, carousel slides, and Reels/TikTok/Shorts storyboards. Timely viral creative often LOOKS sourced — news grab, Reddit screenshot blurred, ticker-style text. You annotate how to SHOW the named fact without infringing (paraphrase, logo-free, fair-use awareness).",
-        "task_description_template": "Topic: {{ topic }}\n\nCopy pack:\n{{ upstream['copy']['text'] }}\n\nBrief each variation including how to VISUALLY cue recency/news (carousel slide with headline summary, screenshot-style frame, caption timestamp language, comparison table of tools, etc.).",
-        "expected_output": "Annotated pack: Format + Visual concept tying to factual hook when present + On-screen/caption specifics + pacing + compliance-friendly notes (don't fake UI)."
+        "role": "Platform Campaign Asset Writer",
+        "goal": "Write platform-native TikTok, Instagram, LinkedIn, and X campaign assets in the creator persona's voice.",
+        "backstory": "You translate one big idea into distinct platform deliverables. Each asset sounds like the creator, not a generic brand account.",
+        "task_description_template": "Topic: {{ topic }}\nPlatforms requested: {{ platforms | default('TikTok, Instagram, LinkedIn, X', true) }}\n\nPersona:\n{{ upstream['persona_synthesizer']['text'] }}\n\nCampaign strategy:\n{{ upstream['campaign_strategist']['text'] }}\n\nReturn strict JSON with keys platform_assets and visual_assets. platform_assets is an array where each object has platform, format, hook, body, script, caption, cta, production_notes. Include TikTok, Instagram, LinkedIn, and X unless platforms requested says otherwise. visual_assets is an array with asset_type, concept, prompt, on_screen_text, production_notes.",
+        "expected_output": "Strict JSON with platform_assets and visual_assets only. No markdown."
       },
-      "position": {
-        "x": 1580,
-        "y": 0
-      }
+      "position": { "x": 1460, "y": -40 }
     },
     {
-      "id": "score",
+      "id": "posting_planner",
       "type": "agent.crewai",
       "data": {
-        "role": "Viral Content Performance Analyst",
-        "goal": "Score '{{ topic }}' variations with **bonus weight** for hooks anchored in verifiable recency/signaling from upstream work (without rewarding fabrication).",
-        "backstory": "You evaluate social content through the lens of shares, saves, comments, and reach — the metrics that define virality on Instagram, TikTok, LinkedIn, and X. You believe timely + truthful beats louder generic content. Reward specificity and \"shareable urgency\" grounded in briefing facts.",
-        "task_description_template": "Topic: {{ topic }}\n\nAnnotated content pack:\n{{ upstream['creative_brief']['text'] }}\n\nRank all variations — explicitly note timeliness/specific-signal leverage in each rationale (+5 to +15 mental bonus if hook clearly rides a documented event). Penalise vague sensationalism unrelated to briefing.",
-        "expected_output": "Markdown table: Rank | Variation | Score | Timeliness Lever (Y/N + detail) | Rationale | Best Platform | Risk note (fabrication/low evidence). Closing: top 3 to ship first referencing why recency resonates."
+        "role": "Campaign Posting Planner",
+        "goal": "Sequence the campaign into a simple publish and repurposing plan.",
+        "backstory": "You help creators ship without overthinking. You plan order, timing, purpose, and repurposing notes that fit platform behavior.",
+        "task_description_template": "Topic: {{ topic }}\n\nPersona:\n{{ upstream['persona_synthesizer']['text'] }}\n\nCampaign strategy:\n{{ upstream['campaign_strategist']['text'] }}\n\nPlatform assets:\n{{ upstream['platform_campaign_assets']['text'] }}\n\nReturn strict JSON with one key posting_plan. It must be an array of objects with order, platform, timing, asset_ref, purpose, repurposing_notes.",
+        "expected_output": "Strict JSON with posting_plan array only. No markdown."
       },
-      "position": {
-        "x": 1800,
-        "y": 0
-      }
+      "position": { "x": 1460, "y": 200 }
+    },
+    {
+      "id": "campaign_packager",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Campaign Result Packager",
+        "goal": "Package all upstream campaign work into the final creator-facing CampaignResult JSON contract.",
+        "backstory": "You are a meticulous JSON packager. You preserve upstream evidence and wording, repair only formatting, and never add unsupported claims.",
+        "task_description_template": "Build the final CampaignResult for topic '{{ topic }}'.\n\nCreatorPersona JSON:\n{{ upstream['persona_synthesizer']['text'] }}\n\nTrend opportunities JSON:\n{{ upstream['trend_synthesizer']['text'] }}\n\nCampaign strategy JSON:\n{{ upstream['campaign_strategist']['text'] }}\n\nPlatform and visual assets JSON:\n{{ upstream['platform_campaign_assets']['text'] }}\n\nPosting plan JSON:\n{{ upstream['posting_planner']['text'] }}\n\nReturn one strict JSON object matching this exact root shape: creator_persona, trend_opportunities, campaign_pack, markdown_summary.\ncampaign_pack must contain: selected_trend, campaign_big_idea, platform_assets, visual_assets, posting_plan, evidence.\nUse campaign_strategy.selected_trend for selected_trend. Use the selected trend evidence plus any directly relevant source proof for campaign_pack.evidence. markdown_summary should be a short creator-friendly summary, not raw source dumps.",
+        "expected_output": "Strict CampaignResult JSON only. No markdown, no code fences."
+      },
+      "position": { "x": 1700, "y": 80 }
     },
     {
       "id": "out",
       "type": "output.pieces",
-      "data": {},
-      "position": {
-        "x": 2020,
-        "y": 0
-      }
+      "data": {
+        "campaign_node_id": "campaign_packager"
+      },
+      "position": { "x": 1940, "y": 80 }
     }
   ],
   "edges": [
-    {
-      "source": "in",
-      "target": "subreddit_researcher"
-    },
-    {
-      "source": "subreddit_researcher",
-      "target": "reddit"
-    },
-    {
-      "source": "in",
-      "target": "serper"
-    },
-    {
-      "source": "in",
-      "target": "instagram"
-    },
-    {
-      "source": "reddit",
-      "target": "merge_signals"
-    },
-    {
-      "source": "serper",
-      "target": "merge_signals"
-    },
-    {
-      "source": "instagram",
-      "target": "merge_signals"
-    },
-    {
-      "source": "merge_signals",
-      "target": "psych"
-    },
-    {
-      "source": "psych",
-      "target": "angles"
-    },
-    {
-      "source": "angles",
-      "target": "copy"
-    },
-    {
-      "source": "copy",
-      "target": "creative_brief"
-    },
-    {
-      "source": "creative_brief",
-      "target": "score"
-    },
-    {
-      "source": "score",
-      "target": "out"
-    }
+    { "source": "in", "target": "subreddit_researcher" },
+    { "source": "subreddit_researcher", "target": "reddit" },
+    { "source": "in", "target": "serper" },
+    { "source": "in", "target": "instagram_creator_scout" },
+    { "source": "instagram_creator_scout", "target": "instagram" },
+    { "source": "in", "target": "instagram_profile_source" },
+    { "source": "reddit", "target": "merge_signals" },
+    { "source": "serper", "target": "merge_signals" },
+    { "source": "instagram", "target": "merge_signals" },
+    { "source": "instagram_profile_source", "target": "merge_signals" },
+    { "source": "merge_signals", "target": "trend_synthesizer" },
+    { "source": "merge_signals", "target": "persona_synthesizer" },
+    { "source": "trend_synthesizer", "target": "campaign_strategist" },
+    { "source": "persona_synthesizer", "target": "campaign_strategist" },
+    { "source": "campaign_strategist", "target": "platform_campaign_assets" },
+    { "source": "persona_synthesizer", "target": "platform_campaign_assets" },
+    { "source": "campaign_strategist", "target": "posting_planner" },
+    { "source": "persona_synthesizer", "target": "posting_planner" },
+    { "source": "platform_campaign_assets", "target": "posting_planner" },
+    { "source": "persona_synthesizer", "target": "campaign_packager" },
+    { "source": "trend_synthesizer", "target": "campaign_packager" },
+    { "source": "campaign_strategist", "target": "campaign_packager" },
+    { "source": "platform_campaign_assets", "target": "campaign_packager" },
+    { "source": "posting_planner", "target": "campaign_packager" },
+    { "source": "campaign_packager", "target": "out" }
   ]
 }

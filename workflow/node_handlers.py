@@ -10,12 +10,16 @@ from typing import Any
 
 from tools.memory_query import build_memory_query_tool
 from tools.memory_write import build_memory_write_tool
-from tools.instagram_apify_tool import instagram_trend_signals
+from tools.instagram_apify_tool import (
+    fetch_instagram_creator_posts_markdown,
+    instagram_trend_signals,
+)
 from tools.reddit_tool import reddit_top_signals
 from workflow.context import NodeExecContext
 from workflow.nodes.openai_image_node import run_openai_image_node
 from workflow.render import merge_context, render_template
 from workflow.schema import (
+    CampaignResult,
     CrewAIParams,
     OpenAIImageParams,
     MemoryQueryParams,
@@ -112,13 +116,17 @@ def handler_reddit(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, An
 def handler_instagram(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
     p = InstagramSourceParams.model_validate(params)
     template_ctx = merge_context(ctx.workflow_inputs, ctx.upstream_outputs)
+    if p.scraping_mode == "creator_profiles":
+        users_raw = render_template(p.usernames_template, template_ctx)
+        text = fetch_instagram_creator_posts_markdown(users_raw, p.posts_per_profile)
+        return {"text": text, "hashtags": "", "usernames": users_raw.strip()}
     tags = render_template(p.hashtags_template, template_ctx)
     raw = _invoke_tool_like(
         instagram_trend_signals,
         {"hashtags": tags, "result_limit": p.result_limit},
     )
     text = raw if isinstance(raw, str) else str(raw)
-    return {"text": text, "hashtags": tags}
+    return {"text": text, "hashtags": tags, "usernames": ""}
 
 
 def handler_serper(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
@@ -217,12 +225,65 @@ def handler_transform_template(ctx: NodeExecContext, params: dict[str, Any]) -> 
     return {"text": out}
 
 
+def _parse_campaign_result(raw: Any) -> tuple[dict[str, Any] | None, str | None]:
+    if raw is None:
+        return None, None
+    if isinstance(raw, dict):
+        candidate = raw.get("campaign_result", raw)
+        try:
+            return CampaignResult.model_validate(candidate).model_dump(mode="json"), None
+        except Exception as e:
+            return None, str(e)
+    if not isinstance(raw, str):
+        raw = str(raw)
+    text = raw.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end <= start:
+            return None, "No JSON object found in campaign node output."
+        try:
+            parsed = json.loads(text[start : end + 1])
+        except json.JSONDecodeError as e:
+            return None, str(e)
+    try:
+        return CampaignResult.model_validate(parsed).model_dump(mode="json"), None
+    except Exception as e:
+        return None, str(e)
+
+
 def handler_output_pieces(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
     p = OutputPiecesParams.model_validate(params)
     bucket = ctx.completed_outputs
     if p.include_node_metadata:
-        return {"nodes": dict(bucket)}
-    return {"chunks": list(bucket.values())}
+        result: dict[str, Any] = {"nodes": dict(bucket)}
+    else:
+        result = {"chunks": list(bucket.values())}
+    if p.campaign_node_id:
+        campaign_node = bucket.get(p.campaign_node_id)
+        raw = None
+        if isinstance(campaign_node, dict):
+            raw = campaign_node.get("campaign_result")
+            raw = raw if raw is not None else campaign_node.get("json")
+            raw = raw if raw is not None else campaign_node.get("raw")
+            raw = raw if raw is not None else campaign_node.get("text")
+        else:
+            raw = campaign_node
+        campaign_result, parse_error = _parse_campaign_result(raw)
+        if campaign_result is not None:
+            result["campaign_result"] = campaign_result
+        elif parse_error:
+            result["campaign_parse_error"] = parse_error
+    return result
 
 
 def handler_openai_image(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:

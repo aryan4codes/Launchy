@@ -161,12 +161,20 @@ export function RunDrawer({
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           {!busy && meta.runId && (meta.status === 'completed' || meta.status === 'failed') ? (
-            <Link
-              to={`results/${encodeURIComponent(meta.runId)}`}
-              className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-emerald-600/45 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-500/20 dark:border-emerald-500/40 dark:bg-emerald-950/55 dark:text-emerald-50 dark:hover:bg-emerald-900/60"
-            >
-              View results
-            </Link>
+            <>
+              <Link
+                to={`/campaigns/${encodeURIComponent(meta.runId)}`}
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-primary/45 bg-primary/10 px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+              >
+                Open campaign
+              </Link>
+              <Link
+                to={`/results/${encodeURIComponent(meta.runId)}`}
+                className="inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-emerald-600/45 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-900 transition-colors hover:bg-emerald-500/20 dark:border-emerald-500/40 dark:bg-emerald-950/55 dark:text-emerald-50 dark:hover:bg-emerald-900/60"
+              >
+                View results
+              </Link>
+            </>
           ) : null}
           {imgs.slice(0, 4).map((url) => (
             <img

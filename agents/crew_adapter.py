@@ -12,7 +12,10 @@ from crewai import Agent, Crew, Process, Task
 
 from core.config import ContentPiece, CrewFinalOutput, RunConfig, RunResult, RunSummary
 from memory.chroma_client import get_performance_collection
-from tools.instagram_apify_tool import instagram_trend_signals
+from tools.instagram_apify_tool import (
+    instagram_creator_post_signals,
+    instagram_trend_signals,
+)
 from tools.landing_page_tool import analyze_competitor_page
 from tools.memory_query import build_memory_query_tool
 from tools.memory_write import build_memory_write_tool
@@ -81,6 +84,7 @@ class CrewAIPipelineRunner:
             "read_website": ScrapeWebsiteTool(),
             "analyze_competitor_page": analyze_competitor_page,
             "instagram_trend_signals": instagram_trend_signals,
+            "instagram_creator_post_signals": instagram_creator_post_signals,
             "memory_query_similar": mq,
             "memory_write_entry": mw,
         }

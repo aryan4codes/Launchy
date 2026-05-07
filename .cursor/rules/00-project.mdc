@@ -10,3 +10,4 @@ alwaysApply: true
 - Default LLM: **`gpt-4.1-nano`** (`OPENAI_MODEL`). Social signals default to **Reddit** only; Instagram is opt-in (`include_instagram`).
 - Chroma persistence defaults to `memory/performance_db`; embeddings **`text-embedding-3-small`** via OpenAI.
 - **Workflow Studio (web)** is aimed at **non-technical creators**: avoid surfacing raw JSON in the product UI; prefer guided fields, short copy, and collapsible “optional” blocks (see `workflow/AGENTS.md`, `web/src/lib/nodeCatalog.ts`, `SchemaForm`).
+- **Marketing home (`/`)** — `web/src/pages/LandingPage.tsx`: **Digital Twin** framing for creators; hero drives **`/campaigns`** and **`/studio`**. Canonical README still: **`outputs/landing.png`**. Creator campaign UI should stay visually aligned with that page (see `.cursor/rules/creator-surfaces.mdc`).

@@ -88,10 +88,15 @@ export function parseRunMeta(payload: unknown): ParsedRunBlob {
 /** Image paths for thumbnails (backward compat with drawer). */
 export function imageUrlsFromRunPayload(payload: unknown): string[] {
   const imgs: string[] = [];
-  const fo = payload && isRecord(payload) ? payload.final_output : undefined;
-  const fb = fo ?? (payload && isRecord(payload) ? payload.node_outputs : undefined);
-
-  walkForImages(fb, imgs);
+  if (!isRecord(payload)) return imgs;
+  if (isRecord(payload.final_output)) {
+    walkForImages(payload.final_output, imgs);
+  }
+  // Runs with `output.pieces` store a campaign-shaped `final_output` without `nodes`;
+  // image artifacts stay on the flat `node_outputs` map.
+  if (isRecord(payload.node_outputs)) {
+    walkForImages({ nodes: payload.node_outputs }, imgs);
+  }
   return [...new Set(imgs)];
 }
 
@@ -127,8 +132,8 @@ export function extractRunSections(payload: unknown): {
 
   walkForDisplay(isRecord(fo) ? fo : undefined, texts, imgs, "", seenText, seenPaths);
 
-  if (!texts.length && !imgs.length && isRecord(payload) && isRecord(payload.node_outputs)) {
-    walkForDisplay(payload.node_outputs as Record<string, unknown>, texts, imgs, "", seenText, seenPaths);
+  if (isRecord(payload) && isRecord(payload.node_outputs)) {
+    walkForDisplay({ nodes: payload.node_outputs as Record<string, unknown> }, texts, imgs, "", seenText, seenPaths);
   }
 
   return { texts, images: imgs };
@@ -213,18 +218,15 @@ export function extractNodeOutputs(payload: unknown): NodeOutputBlock[] {
   if (!isRecord(payload)) return [];
   const specs = nodeSpecsFromPayload(payload);
 
-  const fo = payload.final_output;
   let nodesMap: Record<string, unknown> | undefined;
 
+  const fo = payload.final_output;
   if (isRecord(fo) && isRecord((fo as Record<string, unknown>).nodes)) {
     nodesMap = (fo as Record<string, unknown>).nodes as Record<string, unknown>;
   }
-  if (
-    !nodesMap &&
-    isRecord(payload.node_outputs) &&
-    isRecord((payload.node_outputs as Record<string, unknown>).nodes)
-  ) {
-    nodesMap = (payload.node_outputs as Record<string, unknown>).nodes as Record<string, unknown>;
+  if (!nodesMap && isRecord(payload.node_outputs)) {
+    const rawNo = payload.node_outputs as Record<string, unknown>;
+    nodesMap = isRecord(rawNo.nodes) ? (rawNo.nodes as Record<string, unknown>) : rawNo;
   }
   if (!nodesMap) return [];
 
@@ -600,10 +602,14 @@ function normalizeVisual(v: unknown, index: number): VisualDirectionDisplay | nu
     return { title: `Visual direction ${index + 1}`, prompt: v.trim(), notes: [] };
   }
   if (!isRecord(v)) return null;
-  const prompt = stringValue(valueByKeys(v, ["prompt", "image_prompt", "imagePrompt", "description", "concept"]));
+  const prompt = stringValue(
+    valueByKeys(v, ["prompt", "image_prompt", "imagePrompt", "description", "concept"]),
+  );
   if (!prompt) return null;
   return {
-    title: stringValue(valueByKeys(v, ["title", "name", "format"])) ?? `Visual direction ${index + 1}`,
+    title:
+      stringValue(valueByKeys(v, ["title", "name", "format", "asset_type", "assetType"])) ??
+      `Visual direction ${index + 1}`,
     prompt,
     notes: stringList(valueByKeys(v, ["notes", "frames", "shot_list", "shotList", "on_screen_text", "onScreenText"])),
   };
@@ -614,10 +620,16 @@ function normalizePlanItem(v: unknown, index: number): PostingPlanItemDisplay | 
     return { timing: `Step ${index + 1}`, action: v.trim(), channel: null };
   }
   if (!isRecord(v)) return null;
-  const action = stringValue(valueByKeys(v, ["action", "post", "task", "description", "copy"]));
+  const purpose = stringValue(valueByKeys(v, ["purpose", "action", "post", "task", "description", "copy"]));
+  const assetRef = stringValue(valueByKeys(v, ["asset_ref", "assetRef"]));
+  const repurposing = stringValue(valueByKeys(v, ["repurposing_notes", "repurposingNotes"]));
+  const action = [purpose, assetRef, repurposing].filter(Boolean).join(" — ") || null;
   if (!action) return null;
+  const orderHint =
+    typeof v.order === "number" && Number.isFinite(v.order) ? `Step ${v.order}` : null;
   return {
-    timing: stringValue(valueByKeys(v, ["timing", "day", "time", "sequence"])) ?? `Step ${index + 1}`,
+    timing:
+      stringValue(valueByKeys(v, ["timing", "day", "time", "sequence"])) ?? orderHint ?? `Step ${index + 1}`,
     action,
     channel: stringValue(valueByKeys(v, ["channel", "platform", "destination"])),
   };

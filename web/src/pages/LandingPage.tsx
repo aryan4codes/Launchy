@@ -25,12 +25,14 @@ import { Link } from "react-router-dom";
 
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { IntegrationPill } from "@/components/marketing/IntegrationPill";
+import { ScrollReveal, StaggerItem, StaggerReveal } from "@/components/motion/ScrollReveal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MARKETING_INTEGRATIONS } from "@/lib/integrationBrands";
 
 const HERO_LOGO_STRIP = MARKETING_INTEGRATIONS.slice(0, 8);
 const INTEGRATIONS_ROW_1 = MARKETING_INTEGRATIONS.slice(0, 6);
 const INTEGRATIONS_ROW_2 = MARKETING_INTEGRATIONS.slice(6, 12);
+const INTEGRATIONS_ALL = [...INTEGRATIONS_ROW_1, ...INTEGRATIONS_ROW_2];
 
 type Tone = {
   bg: string;
@@ -103,7 +105,7 @@ function SoftIcon({ tone = "violet", children }: { tone?: keyof typeof TONES; ch
 
 export default function LandingPage() {
   return (
-    <div className="min-h-full overflow-hidden bg-[#fdf7ee] text-foreground dark:bg-background">
+    <div className="min-h-full overflow-hidden bg-[#fdf7ee] font-sans text-foreground antialiased dark:bg-background">
       {/* GLOBAL COLOR WASH */}
       <div className="pointer-events-none fixed inset-0 -z-20 dark:opacity-50">
         <div className="absolute -top-32 -left-24 h-[480px] w-[480px] rounded-full bg-pink-300/40 blur-[140px]" />
@@ -114,7 +116,7 @@ export default function LandingPage() {
       </div>
 
       <header className="relative z-30 mx-auto flex max-w-7xl items-center justify-between px-4 py-5">
-        <Link to="/" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+        <Link to="/" className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 via-orange-400 to-amber-300 text-white shadow-md shadow-pink-300/40">
             <Sparkles className="h-4 w-4" />
           </span>
@@ -145,100 +147,124 @@ export default function LandingPage() {
           ))}
 
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 shadow-sm shadow-fuchsia-200/40 backdrop-blur">
-              <Stars className="h-3.5 w-3.5" aria-hidden />
-              Creator research system
-            </div>
-            <h1 className="text-balance text-5xl font-semibold tracking-[-0.05em] text-foreground sm:text-6xl lg:text-[78px] lg:leading-[1.04]">
-              Create campaigns that sound{" "}
-              <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text italic text-transparent">like you.</span>
-                <svg
-                  aria-hidden
-                  className="absolute -bottom-3 left-0 w-full"
-                  viewBox="0 0 240 14"
-                  fill="none"
-                  preserveAspectRatio="none"
-                  height={14}
-                >
-                  <path
-                    d="M2 9 C 60 0, 180 0, 238 9"
-                    stroke="url(#stroke)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                  <defs>
-                    <linearGradient id="stroke" x1="0" y1="0" x2="240" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#d946ef" />
-                      <stop offset="50%" stopColor="#fb7185" />
-                      <stop offset="100%" stopColor="#fb923c" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </span>
-            </h1>
-            <p className="mx-auto mt-7 max-w-2xl text-balance text-lg leading-8 text-muted-foreground">
-              Launchy finds what your audience is starting to care about, then turns it into posts, scripts, visuals,
-              and schedules in <span className="font-semibold italic text-zinc-900 dark:text-foreground">your</span> own voice.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                to="/campaigns"
-                className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-500 to-orange-400 px-7 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-400/50"
-              >
-                Build my creator persona
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                to="/studio"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-6 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-white"
-              >
-                Open workflow studio
-              </Link>
-            </div>
-
-            {/* HERO LOGO STRIP — always-color */}
-            <div className="mx-auto mt-14 max-w-3xl">
-              <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Signals &amp; platforms Launchy speaks with
-              </p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-                {HERO_LOGO_STRIP.map(({ label, domain, tint, accent }, idx) => (
-                  <div
-                    key={label}
-                    className="group flex items-center gap-2 rounded-full border border-white/70 bg-white px-3 py-1.5 shadow-md ring-1 ring-black/[0.04] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg"
-                    style={{ background: `linear-gradient(120deg, ${tint} 0%, #ffffff 75%)`, transform: idx % 2 === 0 ? "rotate(-1deg)" : "rotate(1deg)" }}
+            <StaggerReveal stagger={0.06} delayChildren={0.04} amount={0.08}>
+              <StaggerItem>
+                <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 shadow-sm shadow-fuchsia-200/40 backdrop-blur">
+                  <Stars className="h-3.5 w-3.5" aria-hidden />
+                  Creator research system
+                </div>
+              </StaggerItem>
+              <StaggerItem>
+                <h1 className="font-display text-balance text-5xl font-medium tracking-[-0.03em] text-foreground sm:text-6xl lg:text-[82px] lg:leading-[1.06]">
+                  Create <span className="italic text-foreground/90">campaigns</span> that sound{" "}
+                  <span className="relative inline-block">
+                    <span className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text font-semibold italic text-transparent">like you.</span>
+                    <svg
+                      aria-hidden
+                      className="absolute -bottom-3 left-0 w-full"
+                      viewBox="0 0 240 14"
+                      fill="none"
+                      preserveAspectRatio="none"
+                      height={14}
+                    >
+                      <path
+                        d="M2 9 C 60 0, 180 0, 238 9"
+                        stroke="url(#stroke)"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        fill="none"
+                      />
+                      <defs>
+                        <linearGradient id="stroke" x1="0" y1="0" x2="240" y2="0" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#d946ef" />
+                          <stop offset="50%" stopColor="#fb7185" />
+                          <stop offset="100%" stopColor="#fb923c" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </span>
+                </h1>
+              </StaggerItem>
+              <StaggerItem>
+                <p className="mx-auto mt-7 max-w-2xl text-balance text-lg leading-8 text-muted-foreground">
+                  Launchy finds what your audience is starting to care about, then turns it into posts, scripts, visuals,
+                  and schedules in <span className="font-semibold italic text-zinc-900 dark:text-foreground">your</span>{" "}
+                  own voice.
+                </p>
+              </StaggerItem>
+              <StaggerItem>
+                <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Link
+                    to="/campaigns"
+                    className="group inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-500 to-orange-400 px-7 text-sm font-semibold text-white shadow-lg shadow-rose-400/40 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-400/50"
                   >
-                    <CompanyLogo domain={domain} label={label} size={26} round className="ring-2 ring-white" />
-                    <span className="max-w-[8rem] truncate text-xs font-semibold text-zinc-900">{label}</span>
-                    <span aria-hidden className="ml-1 h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
-                  </div>
-                ))}
-              </div>
-            </div>
+                    Build my creator persona
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                  </Link>
+                  <Link
+                    to="/studio"
+                    className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-6 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-white"
+                  >
+                    Open workflow studio
+                  </Link>
+                </div>
+              </StaggerItem>
+              <StaggerItem>
+                <div className="mx-auto mt-14 max-w-3xl">
+                  <p className="text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                    Signals &amp; platforms Launchy speaks with
+                  </p>
+                  <StaggerReveal
+                    className="mt-5 flex flex-wrap items-center justify-center gap-2.5"
+                    stagger={0.04}
+                    delayChildren={0.02}
+                    amount={0.05}
+                  >
+                    {HERO_LOGO_STRIP.map(({ label, domain, tint, accent }, idx) => (
+                      <StaggerItem key={label}>
+                        <div
+                          className="group flex items-center gap-2 rounded-full border border-white/70 bg-white px-3 py-1.5 shadow-md ring-1 ring-black/[0.04] backdrop-blur transition hover:-translate-y-0.5 hover:shadow-lg"
+                          style={{
+                            background: `linear-gradient(120deg, ${tint} 0%, #ffffff 75%)`,
+                            transform: idx % 2 === 0 ? "rotate(-1deg)" : "rotate(1deg)",
+                          }}
+                        >
+                          <CompanyLogo domain={domain} label={label} size={26} round className="ring-2 ring-white" />
+                          <span className="max-w-[8rem] truncate text-xs font-semibold text-zinc-900">{label}</span>
+                          <span aria-hidden className="ml-1 h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+                        </div>
+                      </StaggerItem>
+                    ))}
+                  </StaggerReveal>
+                </div>
+              </StaggerItem>
+            </StaggerReveal>
           </div>
         </section>
 
         {/* PRODUCT — TWO PATHS */}
         <section id="product" className="mx-auto max-w-7xl px-4 py-16">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 shadow-sm">
-              Two ways to launch
+          <ScrollReveal duration={0.55} amount={0.25}>
+            <div className="mx-auto max-w-2xl text-center">
+              <div className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 shadow-sm">
+                Two ways to launch
+              </div>
+              <h2 className="font-display mt-4 text-balance text-4xl font-normal italic tracking-tight md:text-5xl md:leading-[1.12]">
+                Trend research for{" "}
+                <span className="bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text font-semibold not-italic text-transparent">creators</span>
+                , <span className="not-italic">workflow control for</span>{" "}
+                <span className="bg-gradient-to-r from-violet-500 to-sky-500 bg-clip-text font-semibold not-italic text-transparent">builders</span>
+                .
+              </h2>
             </div>
-            <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight md:text-5xl">
-              Trend research for{" "}
-              <span className="bg-gradient-to-r from-rose-500 to-orange-400 bg-clip-text text-transparent">creators</span>,
-              workflow control for{" "}
-              <span className="bg-gradient-to-r from-violet-500 to-sky-500 bg-clip-text text-transparent">builders</span>.
-            </h2>
-          </div>
+          </ScrollReveal>
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <StaggerReveal className="mt-12 grid gap-6 lg:grid-cols-2" stagger={0.12} amount={0.15}>
+            <StaggerItem className="h-full min-h-0">
             {/* CREATOR CARD */}
             <Link
               to="/campaigns"
-              className="group relative overflow-hidden rounded-[2rem] border border-rose-100 bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-7 shadow-xl shadow-rose-200/50 transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-300/60"
+              className="group relative isolate block h-full min-h-[260px] w-full overflow-hidden rounded-[2rem] border border-rose-200/90 bg-rose-50 bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-7 text-left text-zinc-950 no-underline shadow-xl shadow-rose-200/50 [color-scheme:light] transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-rose-300/60 dark:border-rose-300/55 dark:from-rose-100 dark:via-orange-50 dark:to-amber-100 dark:text-zinc-950 dark:shadow-none"
             >
               <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-rose-300/40 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-24 -left-12 h-64 w-64 rounded-full bg-amber-300/40 blur-3xl" />
@@ -250,8 +276,8 @@ export default function LandingPage() {
                     For creators
                   </span>
                 </div>
-                <h3 className="mt-6 text-3xl font-semibold tracking-tight text-zinc-950">Turn trends into posts.</h3>
-                <p className="mt-3 max-w-md text-sm leading-6 text-rose-900/80">
+                <h3 className="font-display mt-6 text-3xl font-semibold italic tracking-tight text-zinc-950">Turn trends into posts.</h3>
+                <p className="mt-3 max-w-md text-sm leading-7 text-zinc-800">
                   Trend research, creator-persona matching, platform-ready assets, visuals, and a posting sequence.
                 </p>
 
@@ -272,17 +298,19 @@ export default function LandingPage() {
                   ))}
                 </div>
 
-                <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-rose-600">
+                <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-rose-700">
                   Start creator campaigns
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </span>
               </div>
             </Link>
+            </StaggerItem>
 
+            <StaggerItem className="h-full min-h-0">
             {/* STUDIO CARD */}
             <Link
               to="/studio"
-              className="group relative overflow-hidden rounded-[2rem] border border-violet-100 bg-gradient-to-br from-violet-50 via-sky-50 to-emerald-50 p-7 shadow-xl shadow-violet-200/50 transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-violet-300/60"
+              className="group relative isolate block h-full min-h-[260px] w-full overflow-hidden rounded-[2rem] border border-violet-200/90 bg-violet-50 bg-gradient-to-br from-violet-50 via-sky-50 to-emerald-50 p-7 text-left text-zinc-950 no-underline shadow-xl shadow-violet-200/50 [color-scheme:light] transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-violet-300/60 dark:border-violet-300/55 dark:from-violet-100 dark:via-sky-50 dark:to-emerald-100 dark:text-zinc-950 dark:shadow-none"
             >
               <div className="pointer-events-none absolute -left-20 -top-20 h-72 w-72 rounded-full bg-violet-300/40 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-sky-300/40 blur-3xl" />
@@ -294,8 +322,8 @@ export default function LandingPage() {
                     For builders
                   </span>
                 </div>
-                <h3 className="mt-6 text-3xl font-semibold tracking-tight text-zinc-950">Build the research machine.</h3>
-                <p className="mt-3 max-w-md text-sm leading-6 text-violet-900/80">
+                <h3 className="font-display mt-6 text-3xl font-semibold italic tracking-tight text-zinc-950">Build the research machine.</h3>
+                <p className="mt-3 max-w-md text-sm leading-7 text-zinc-800">
                   Advanced workflow canvas for sources, agents, images, custom prompts, and output pipelines.
                 </p>
 
@@ -314,37 +342,39 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-violet-600">
+                <span className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-violet-700">
                   Open workflow studio
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </span>
               </div>
             </Link>
-          </div>
+            </StaggerItem>
+          </StaggerReveal>
         </section>
 
         {/* HOW IT WORKS — colored sticker cards */}
         <section className="mx-auto max-w-7xl px-4 py-16">
-          <div className="grid gap-4 md:grid-cols-4">
+          <StaggerReveal className="grid gap-4 md:grid-cols-4" stagger={0.09} amount={0.12}>
             {HOW_IT_WORKS.map(({ title, body, Icon, tone }, idx) => {
               const t = TONES[tone];
               return (
-                <div
-                  key={title}
-                  className={`group relative overflow-hidden rounded-3xl border border-white/70 bg-white p-5 shadow-lg ring-1 ring-black/[0.04] transition hover:-translate-y-1 hover:shadow-xl ${t.glow}`}
-                  style={{ transform: `rotate(${idx % 2 === 0 ? "-1deg" : "1deg"})` }}
-                >
+                <StaggerItem key={title}>
+                  <div
+                    className={`group relative overflow-hidden rounded-3xl border border-white/70 bg-white p-5 shadow-lg ring-1 ring-black/[0.04] transition hover:-translate-y-1 hover:shadow-xl ${t.glow}`}
+                    style={{ transform: `rotate(${idx % 2 === 0 ? "-1deg" : "1deg"})` }}
+                  >
                   <div className={`absolute inset-x-0 top-0 h-1.5 ${t.bg}`} />
                   <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${t.bg} ring-1 ${t.ring}`}>
                     <Icon className={`h-5 w-5 ${t.icon}`} />
                   </div>
                   <div className={`mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] ${t.text}`}>Step {idx + 1}</div>
-                  <h3 className="mt-1 font-semibold text-zinc-950">{title}</h3>
+                  <h3 className="font-display mt-1 text-xl font-semibold italic text-zinc-950">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-zinc-600">{body}</p>
                 </div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerReveal>
         </section>
 
         {/* INTEGRATIONS — vibrant brand pills */}
@@ -357,35 +387,36 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute -bottom-20 right-10 h-80 w-80 rounded-full bg-sky-200/60 blur-3xl" />
 
           <div className="relative mx-auto max-w-5xl text-center text-zinc-950">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600">
-              Sources &amp; outputs
-            </p>
-            <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
-              <span className="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 bg-clip-text text-transparent">Signals in</span>
-              , platform-ready{" "}
-              <span className="bg-gradient-to-r from-emerald-500 via-sky-500 to-violet-500 bg-clip-text text-transparent">assets out.</span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-zinc-700">
-              Start with communities and public sources. Leave with creator assets for every channel you actually post on.
-            </p>
-            <div className="mt-12 flex flex-col items-center gap-4">
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-                {INTEGRATIONS_ROW_1.map((b) => (
-                  <IntegrationPill key={b.label} {...b} />
-                ))}
+            <ScrollReveal blur duration={0.65} amount={0.2}>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600">
+                  Sources &amp; outputs
+                </p>
+                <h2 className="font-display mt-3 text-balance text-4xl font-normal italic tracking-tight text-zinc-950 md:text-5xl md:leading-[1.12]">
+                  <span className="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 bg-clip-text font-semibold not-italic text-transparent">Signals in</span>
+                  , <span className="not-italic">platform-ready</span>{" "}
+                  <span className="bg-gradient-to-r from-emerald-500 via-sky-500 to-violet-500 bg-clip-text font-semibold not-italic text-transparent">assets out</span>
+                  .
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-zinc-700">
+                  Start with communities and public sources. Leave with creator assets for every channel you actually post on.
+                </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-                {INTEGRATIONS_ROW_2.map((b) => (
-                  <IntegrationPill key={b.label} {...b} />
-                ))}
-              </div>
-            </div>
+            </ScrollReveal>
+            <StaggerReveal className="mt-12 flex flex-wrap justify-center gap-3 md:gap-4" stagger={0.035} amount={0.08}>
+              {INTEGRATIONS_ALL.map((b) => (
+                <StaggerItem key={b.label}>
+                  <IntegrationPill {...b} />
+                </StaggerItem>
+              ))}
+            </StaggerReveal>
           </div>
         </section>
 
         {/* DEMO / VOICE */}
         <section id="demo" className="mx-auto grid max-w-7xl gap-5 px-4 py-20 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative overflow-hidden rounded-[2rem] border border-fuchsia-100 bg-gradient-to-br from-fuchsia-500 via-rose-500 to-orange-400 p-8 text-white shadow-2xl shadow-rose-300/40">
+          <ScrollReveal direction="left" distance={32} duration={0.55} amount={0.2} className="min-h-0">
+            <div className="relative overflow-hidden rounded-[2rem] border border-fuchsia-100 bg-gradient-to-br from-fuchsia-500 via-rose-500 to-orange-400 p-8 text-white shadow-2xl shadow-rose-300/40">
             <div className="pointer-events-none absolute -bottom-10 -right-10 h-60 w-60 rounded-full bg-white/20 blur-3xl" />
             <div className="pointer-events-none absolute -top-10 -left-10 h-44 w-44 rounded-full bg-amber-200/40 blur-3xl" />
             <div className="relative">
@@ -393,9 +424,9 @@ export default function LandingPage() {
                 <Sparkles className="h-3.5 w-3.5" />
                 Personality first
               </div>
-              <h2 className="mt-6 text-4xl font-semibold leading-tight tracking-tight">
+              <h2 className="font-display mt-6 text-4xl font-medium italic leading-tight tracking-tight">
                 Keep the writing aligned with your{" "}
-                <span className="italic underline decoration-white/60 decoration-4 underline-offset-4">actual</span>{" "}
+                <span className="not-italic underline decoration-white/60 decoration-[3px] underline-offset-[6px]">actual</span>{" "}
                 internet personality.
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-white/85">
@@ -412,42 +443,44 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-          </div>
+            </div>
+          </ScrollReveal>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <StaggerReveal className="grid auto-rows-fr gap-4 sm:grid-cols-2" stagger={0.1} amount={0.12}>
             {[
               { copy: "Spot the trend before it becomes generic.",          tone: "amber",   Icon: Flame },
               { copy: "Translate audience signals into sharp angles.",      tone: "violet",  Icon: Wand2 },
               { copy: "Generate TikTok, Instagram, LinkedIn, and X assets.", tone: "sky",    Icon: PenLine },
               { copy: "Review evidence without reading a raw data dump.",    tone: "emerald", Icon: BadgeCheck },
-            ].map(({ copy, tone, Icon }, index) => {
+            ].map(({ copy, tone, Icon }) => {
               const t = TONES[tone as keyof typeof TONES];
               return (
-                <div
-                  key={copy}
-                  className={`relative overflow-hidden rounded-[2rem] border border-white/70 bg-white p-6 shadow-xl ring-1 ring-black/[0.04] ${index === 1 ? "sm:mt-8" : ""}`}
-                >
+                <StaggerItem key={copy} className="h-full min-h-0">
+                  <div
+                    className="relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white p-6 shadow-xl ring-1 ring-black/[0.04]"
+                  >
                   <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full ${t.bg} opacity-80 blur-2xl`} />
-                  <div className={`relative flex h-11 w-11 items-center justify-center rounded-2xl ${t.bg} ring-1 ${t.ring}`}>
+                  <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${t.bg} ring-1 ${t.ring}`}>
                     <Icon className={`h-5 w-5 ${t.icon}`} />
                   </div>
-                  <p className="relative mt-5 text-lg font-semibold leading-7 text-zinc-950">{copy}</p>
-                  <Play className="relative mt-4 h-4 w-4 text-zinc-500" />
+                  <p className="font-display relative mt-5 flex-1 text-xl font-medium italic leading-snug text-zinc-950">{copy}</p>
+                  <Play className="relative mt-4 h-4 w-4 shrink-0 text-zinc-500" />
                 </div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerReveal>
         </section>
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-12">
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/70 bg-gradient-to-br from-amber-100 via-rose-100 to-fuchsia-100 p-10 text-center shadow-2xl shadow-rose-200/40">
+        <ScrollReveal duration={0.55} amount={0.2}>
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-white/70 bg-gradient-to-br from-amber-100 via-rose-100 to-fuchsia-100 p-10 text-center shadow-2xl shadow-rose-200/40">
           <div className="pointer-events-none absolute -top-10 left-10 h-48 w-48 rounded-full bg-fuchsia-300/50 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-10 right-10 h-56 w-56 rounded-full bg-amber-300/50 blur-3xl" />
           <div className="relative">
-            <h2 className="text-balance text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
-              Ready to create{" "}
-              <span className="italic">before</span> everyone else posts it?
+            <h2 className="font-display text-balance text-4xl font-normal italic tracking-tight text-zinc-950 md:text-5xl md:leading-[1.1]">
+              Ready to create <span className="font-semibold not-italic">before</span> everyone else posts it?
             </h2>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link
@@ -465,7 +498,8 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-        </div>
+          </div>
+        </ScrollReveal>
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>© Launchy</span>
           <span className="italic">Made for creators who post like themselves.</span>

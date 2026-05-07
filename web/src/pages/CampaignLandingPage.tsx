@@ -19,6 +19,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { IntegrationPill } from "@/components/marketing/IntegrationPill";
+import { ScrollReveal, StaggerItem, StaggerReveal } from "@/components/motion/ScrollReveal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +27,7 @@ import { MARKETING_INTEGRATIONS } from "@/lib/integrationBrands";
 
 const CAMPAIGN_LOGO_ROW_1 = MARKETING_INTEGRATIONS.slice(0, 6);
 const CAMPAIGN_LOGO_ROW_2 = MARKETING_INTEGRATIONS.slice(6, 12);
+const CAMPAIGN_INTEGRATIONS_ALL = [...CAMPAIGN_LOGO_ROW_1, ...CAMPAIGN_LOGO_ROW_2];
 
 type ChipColor = {
   active: string;
@@ -187,56 +189,64 @@ export default function CampaignLandingPage() {
           <div className="pointer-events-none absolute -bottom-24 -right-12 h-72 w-72 rounded-full bg-amber-300/40 blur-3xl" />
 
           <div className="relative mx-auto max-w-3xl text-center text-zinc-950">
-            <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 shadow-sm">
-              <Stars className="h-3.5 w-3.5" />
-              Creator onboarding
-            </div>
-            <h1 className="mt-6 text-balance text-5xl font-semibold tracking-[-0.045em] text-zinc-950 md:text-6xl lg:text-7xl">
-              Turn trends into campaigns that sound like{" "}
-              <span className="relative inline-block">
-                <span className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text italic text-transparent">
-                  you.
-                </span>
-                <svg
-                  aria-hidden
-                  className="absolute -bottom-2 left-0 w-full"
-                  viewBox="0 0 100 8"
-                  fill="none"
-                  preserveAspectRatio="none"
-                  height={8}
-                >
-                  <path d="M2 5 C 30 0, 70 0, 98 5" stroke="url(#g)" strokeWidth="3" strokeLinecap="round" />
-                  <defs>
-                    <linearGradient id="g" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#d946ef" />
-                      <stop offset="100%" stopColor="#fb923c" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-700">
-              Define your voice once, then use Launchy to research what your audience is talking about and shape it into
-              posts, scripts, visuals, and a launch sequence.
-            </p>
-
-            {/* mini sticker row */}
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
-              {[
-                { label: "Trend cards",   tone: "bg-amber-100 text-amber-800 ring-amber-300",   Icon: Flame },
-                { label: "TikTok scripts", tone: "bg-cyan-100 text-cyan-700 ring-cyan-300",      Icon: PenLine },
-                { label: "IG carousels",  tone: "bg-pink-100 text-pink-700 ring-pink-300",      Icon: Heart },
-                { label: "Voice match",   tone: "bg-violet-100 text-violet-700 ring-violet-300", Icon: Wand2 },
-              ].map(({ label, tone, Icon }) => (
-                <span
-                  key={label}
-                  className={`inline-flex items-center gap-1.5 rounded-full ${tone} px-3 py-1 text-xs font-semibold ring-1`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </span>
-              ))}
-            </div>
+            <StaggerReveal stagger={0.06} delayChildren={0.04} amount={0.1}>
+              <StaggerItem>
+                <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 shadow-sm">
+                  <Stars className="h-3.5 w-3.5" />
+                  Creator onboarding
+                </div>
+              </StaggerItem>
+              <StaggerItem>
+                <h1 className="mt-6 text-balance text-5xl font-semibold tracking-[-0.045em] text-zinc-950 md:text-6xl lg:text-7xl">
+                  Turn trends into campaigns that sound like{" "}
+                  <span className="relative inline-block">
+                    <span className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text italic text-transparent">
+                      you.
+                    </span>
+                    <svg
+                      aria-hidden
+                      className="absolute -bottom-2 left-0 w-full"
+                      viewBox="0 0 100 8"
+                      fill="none"
+                      preserveAspectRatio="none"
+                      height={8}
+                    >
+                      <path d="M2 5 C 30 0, 70 0, 98 5" stroke="url(#g)" strokeWidth="3" strokeLinecap="round" />
+                      <defs>
+                        <linearGradient id="g" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%" stopColor="#d946ef" />
+                          <stop offset="100%" stopColor="#fb923c" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                  </span>
+                </h1>
+              </StaggerItem>
+              <StaggerItem>
+                <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-700">
+                  Define your voice once, then use Launchy to research what your audience is talking about and shape it into
+                  posts, scripts, visuals, and a launch sequence.
+                </p>
+              </StaggerItem>
+              <StaggerItem>
+                <div className="mt-8 flex flex-wrap justify-center gap-2">
+                  {[
+                    { label: "Trend cards",   tone: "bg-amber-100 text-amber-800 ring-amber-300",   Icon: Flame },
+                    { label: "TikTok scripts", tone: "bg-cyan-100 text-cyan-700 ring-cyan-300",      Icon: PenLine },
+                    { label: "IG carousels",  tone: "bg-pink-100 text-pink-700 ring-pink-300",      Icon: Heart },
+                    { label: "Voice match",   tone: "bg-violet-100 text-violet-700 ring-violet-300", Icon: Wand2 },
+                  ].map(({ label, tone, Icon }) => (
+                    <span
+                      key={label}
+                      className={`inline-flex items-center gap-1.5 rounded-full ${tone} px-3 py-1 text-xs font-semibold ring-1`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </StaggerItem>
+            </StaggerReveal>
           </div>
         </section>
 
@@ -246,27 +256,27 @@ export default function CampaignLandingPage() {
           <div className="pointer-events-none absolute -top-16 right-10 h-60 w-60 rounded-full bg-sky-200/60 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-16 left-10 h-60 w-60 rounded-full bg-rose-200/60 blur-3xl" />
           <div className="relative mx-auto max-w-3xl text-center text-zinc-950">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600">Sources &amp; platforms</p>
-            <p className="mt-2 text-sm text-zinc-700">
-              Connects community signals to the channels you actually post on.
-            </p>
-            <div className="mt-7 flex flex-col items-center gap-3">
-              <div className="flex flex-wrap justify-center gap-3">
-                {CAMPAIGN_LOGO_ROW_1.map((b) => (
-                  <IntegrationPill key={b.label} {...b} />
-                ))}
+            <ScrollReveal duration={0.55} amount={0.18}>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600">Sources &amp; platforms</p>
+                <p className="mt-2 text-sm text-zinc-700">
+                  Connects community signals to the channels you actually post on.
+                </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-3">
-                {CAMPAIGN_LOGO_ROW_2.map((b) => (
-                  <IntegrationPill key={b.label} {...b} />
-                ))}
-              </div>
-            </div>
+            </ScrollReveal>
+            <StaggerReveal className="mt-7 flex flex-wrap justify-center gap-3" stagger={0.035} amount={0.08}>
+              {CAMPAIGN_INTEGRATIONS_ALL.map((b) => (
+                <StaggerItem key={b.label}>
+                  <IntegrationPill {...b} />
+                </StaggerItem>
+              ))}
+            </StaggerReveal>
           </div>
         </section>
 
         {/* PERSONA BUILDER */}
         <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <ScrollReveal direction="right" distance={28} duration={0.5} amount={0.12} className="min-h-0">
           <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white p-7 text-zinc-950 shadow-xl shadow-black/5">
             <div className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-fuchsia-200/50 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-emerald-200/50 blur-3xl" />
@@ -393,28 +403,32 @@ export default function CampaignLandingPage() {
               </div>
             </div>
           </div>
+          </ScrollReveal>
 
+          <ScrollReveal direction="left" distance={28} delay={0.08} duration={0.5} amount={0.12} className="min-h-0">
           <div className="space-y-5">
             <PersonaPreviewCard niche={niche} audience={audience} tones={selectedTones} formats={selectedFormats} />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <StaggerReveal className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1" stagger={0.07} amount={0.1}>
               {[
                 { copy: "Find what your audience is talking about.",            tone: "bg-amber-100 text-amber-800 ring-amber-300",   dot: "bg-amber-500" },
                 { copy: "Choose the trend with the strongest content angle.",   tone: "bg-rose-100 text-rose-800 ring-rose-300",      dot: "bg-rose-500" },
                 { copy: "Generate TikTok, Instagram, LinkedIn, and X assets.",  tone: "bg-violet-100 text-violet-800 ring-violet-300", dot: "bg-violet-500" },
                 { copy: "Rewrite everything in your own voice.",                tone: "bg-emerald-100 text-emerald-800 ring-emerald-300", dot: "bg-emerald-500" },
               ].map(({ copy, tone, dot }) => (
-                <div
-                  key={copy}
-                  className={`flex items-start gap-3 rounded-3xl border border-white/70 bg-white px-5 py-4 text-sm font-semibold shadow-sm`}
-                >
-                  <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${tone} ring-1`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-                  </span>
-                  <span className="text-zinc-900">{copy}</span>
-                </div>
+                <StaggerItem key={copy}>
+                  <div
+                    className={`flex items-start gap-3 rounded-3xl border border-white/70 bg-white px-5 py-4 text-sm font-semibold shadow-sm`}
+                  >
+                    <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${tone} ring-1`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                    </span>
+                    <span className="text-zinc-900">{copy}</span>
+                  </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerReveal>
           </div>
+          </ScrollReveal>
         </section>
       </main>
     </div>

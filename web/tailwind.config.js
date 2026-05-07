@@ -4,6 +4,10 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        /** Editorial / luxury display — pair with `font-sans` on the same page for UI body copy */
+        display: ['"Cormorant Garamond"', 'Georgia', 'Times New Roman', 'serif'],
+      },
       borderRadius: {
         none: '0',
         /** Shared curvature — bumped from Tailwind defaults for a softer creator UI */

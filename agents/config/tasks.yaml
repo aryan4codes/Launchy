@@ -13,46 +13,55 @@ tasks:
       1) Call reddit_top_signals with the subreddit list (limit ~15 per sub). Treat Reddit as supplemental.
       2) Serper research — run multiple searches; start from these phrasing templates (vary slightly if needed):
       {serper_query_hints}
+      2b) Instagram (when enabled): prefer **instagram_creator_post_signals** with comma-separated **creator usernames**
+      you trust for this niche (no @); use posts_per_profile 10–12. If you cannot name real creators, use
+      **instagram_trend_signals** with niche hashtags instead.
       3) Optionally scrape one or two promising URLs with read_website only if titles/snippets tie to the niche.
       4) Optionally analyze_competitor_page on one URL only if it clearly serves the same niche.
 
-      Summarize exactly 10 trends as bullet lines: topic — source — engagement hint — recency note.
-    expected_output: Bullet list of exactly 10 niche-relevant trends with sources.
+      Summarize exactly 10 trend opportunities as bullet lines:
+      title — why_now — source/evidence — engagement hint — recommended platforms.
+    expected_output: Bullet list of exactly 10 niche-relevant trend opportunities with evidence.
 
   - id: map_psychology
     agent: audience_psychologist
     description: |
       Niche: {niche}
-      From the trend list below only, map psychology per trend (ignore anything not aligned with this niche).
-      Output JSON-like text blocks per trend: primary_trigger, secondary_trigger, objections, phrases.
-    expected_output: Structured emotional profiles keyed by trend title.
+      From the trend list below only, map audience psychology and persona fit per trend
+      (ignore anything not aligned with this niche).
+      Output JSON-like text blocks per trend with keys:
+      primary_trigger, secondary_trigger, audience, objections, phrases, persona_fit_notes.
+    expected_output: Structured creator/audience profiles keyed by trend title.
 
   - id: angles
     agent: content_strategist
     description: |
       Niche: {niche}
       Platforms to cover: {platforms}
-      Produce exactly {angles} content angles grounded in the trends above and this niche — no generic viral filler.
-      Each line must name angle title, primary platform (from list),
-      and recommended format (short post, thread outline, carousel outline).
-    expected_output: Numbered list of {angles} angles with platform + format.
+      Produce exactly {angles} campaign angles grounded in the trend opportunities above and this niche —
+      no generic viral filler.
+      Each line must name trend title, campaign_big_idea, primary platform (from list),
+      recommended format (short video, thread, carousel, long post), and evidence/risk note.
+    expected_output: Numbered list of {angles} campaign angles with platform, format, evidence, and risk.
 
   - id: write_copy
     agent: copywriter
     description: |
       Niche: {niche}
-      For each angle, write {variations} variations per platform in {platforms}.
-      Total combinations may be large — prioritize clarity and native tone per platform.
+      For each campaign angle, write {variations} persona-aligned variations per platform in {platforms}.
+      Total combinations may be large — prioritize clarity, native tone, and useful CTAs per platform.
       Include hook as first line per variation. Do not pivot to unrelated industries or regions unless the trend explicitly does.
-    expected_output: Structured blocks angle -> variations per platform.
+      Use consistent fields where possible: platform, format, hook, body/script, caption, CTA.
+    expected_output: Structured blocks angle -> platform_assets -> variations.
 
   - id: creative_briefs
     agent: creative_director
     description: |
       Niche: {niche}
-      For every variation from the prior step, append a short creative brief:
-      visual_style, format_type (carousel/reel/static/thread), color mood, overlay notes.
-    expected_output: Same structure with briefs appended.
+      For every variation from the prior step, append campaign production guidance:
+      visual_style, format_type (carousel/reel/static/thread), color mood, overlay notes,
+      on_screen_text, thumbnail concept, and repurposing notes.
+    expected_output: Same structure with visual campaign briefs appended.
 
   - id: score_and_memory
     agent: performance_analyst
@@ -71,7 +80,7 @@ tasks:
          topic (trend), hook (first line), platform, angle, predicted_score.
       4) Flag recommended=true for the top 10 pieces by score within this run.
 
-      Produce structured JSON matching CrewFinalOutput: an object with key "pieces" only — array of scored items.
+      Produce structured JSON matching CrewFinalOutput: an object with key "pieces" only — array of scored campaign assets.
       Each piece must include: content_id, trend, angle, platform, variation_number, body, creative_brief,
       predicted_score (0-100), score_reasoning, recommended (boolean). Omit summary — the pipeline computes it.
     expected_output: >-

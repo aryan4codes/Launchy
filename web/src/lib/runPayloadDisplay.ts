@@ -360,3 +360,359 @@ export function pipelineStagesFromPartition(p: ResultsBoardPartition): string[] 
   if (!stages.length) stages.push("Analysis");
   return stages;
 }
+
+// ──────────────────────────────────────────────────────────────────
+// Creator campaign extraction — for `/campaigns/:id`
+// ──────────────────────────────────────────────────────────────────
+
+export type CreatorPersonaDisplay = {
+  voiceSummary: string | null;
+  toneTraits: string[];
+  audience: string | null;
+  contentFormats: string[];
+  recurringThemes: string[];
+  visualStyle: string | null;
+  doSay: string[];
+  doNotSay: string[];
+};
+
+export type TrendOpportunityDisplay = {
+  title: string;
+  whyNow: string | null;
+  audience: string | null;
+  confidence: string | null;
+  risk: string | null;
+  recommendedPlatforms: string[];
+  evidence: EvidenceItemDisplay[];
+};
+
+export type PlatformAssetDisplay = {
+  platform: string;
+  format: string | null;
+  hook: string | null;
+  body: string;
+  caption: string | null;
+  cta: string | null;
+  productionNotes: string | null;
+};
+
+export type VisualDirectionDisplay = {
+  title: string;
+  prompt: string;
+  notes: string[];
+};
+
+export type PostingPlanItemDisplay = {
+  timing: string;
+  action: string;
+  channel: string | null;
+};
+
+export type EvidenceItemDisplay = {
+  source: string | null;
+  title: string;
+  url: string | null;
+  metric: string | null;
+  summary: string | null;
+};
+
+export type CampaignDisplayModel = {
+  hasCampaignShape: boolean;
+  topic: string | null;
+  persona: CreatorPersonaDisplay | null;
+  topRecommendation: string | null;
+  campaignBigIdea: string | null;
+  selectedTrendTitle: string | null;
+  trendOpportunities: TrendOpportunityDisplay[];
+  platformAssets: PlatformAssetDisplay[];
+  visualDirections: VisualDirectionDisplay[];
+  postingPlan: PostingPlanItemDisplay[];
+  evidence: EvidenceItemDisplay[];
+  fallbackBlocks: NodeOutputBlock[];
+};
+
+const CAMPAIGN_KEYS = [
+  "creator_persona",
+  "persona",
+  "trend_opportunities",
+  "trendOpportunities",
+  "campaign_pack",
+  "campaignPack",
+  "platform_assets",
+  "platformAssets",
+  "posting_plan",
+  "postingPlan",
+  "evidence",
+];
+
+function valueByKeys(rec: Record<string, unknown>, keys: string[]): unknown {
+  for (const key of keys) {
+    if (key in rec) return rec[key];
+  }
+  return undefined;
+}
+
+function stringValue(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) return v.trim();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return null;
+}
+
+function selectedTrendTitleValue(packRecord: Record<string, unknown>): string | null {
+  const selectedTrendValue = valueByKeys(packRecord, ["selected_trend", "selectedTrend"]);
+  return (
+    (isRecord(selectedTrendValue)
+      ? stringValue(valueByKeys(selectedTrendValue, ["title", "trend", "name", "opportunity"]))
+      : stringValue(selectedTrendValue)) ??
+    stringValue(valueByKeys(packRecord, ["trend_title", "trendTitle"]))
+  );
+}
+
+function stringList(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(stringValue).filter((x): x is string => Boolean(x));
+  const s = stringValue(v);
+  if (!s) return [];
+  return s
+    .split(/\n|,/)
+    .map((part) => part.replace(/^[-*]\s*/, "").trim())
+    .filter(Boolean);
+}
+
+function recordList(v: unknown): Record<string, unknown>[] {
+  if (Array.isArray(v)) return v.filter(isRecord);
+  return isRecord(v) ? [v] : [];
+}
+
+function looksCampaignLike(rec: Record<string, unknown>): boolean {
+  return CAMPAIGN_KEYS.some((key) => key in rec);
+}
+
+function tryParseJsonObject(text: string): Record<string, unknown> | null {
+  const candidates = [
+    text.trim(),
+    ...[...text.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)].map((match) => match[1]?.trim() ?? ""),
+  ].filter(Boolean);
+
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start >= 0 && end > start) candidates.push(text.slice(start, end + 1));
+
+  for (const candidate of candidates) {
+    try {
+      const parsed: unknown = JSON.parse(candidate);
+      if (isRecord(parsed)) return parsed;
+    } catch {
+      // Keep scanning; older runs often wrap JSON in prose.
+    }
+  }
+  return null;
+}
+
+function collectCampaignCandidates(payload: unknown, nodeBlocks: NodeOutputBlock[]): Record<string, unknown>[] {
+  const candidates: Record<string, unknown>[] = [];
+  const visit = (v: unknown, depth = 0) => {
+    if (depth > 5) return;
+    if (typeof v === "string") {
+      const parsed = tryParseJsonObject(v);
+      if (parsed) visit(parsed, depth + 1);
+      return;
+    }
+    if (Array.isArray(v)) {
+      for (const item of v) visit(item, depth + 1);
+      return;
+    }
+    if (!isRecord(v)) return;
+    if (looksCampaignLike(v)) candidates.push(v);
+    for (const nested of Object.values(v)) visit(nested, depth + 1);
+  };
+
+  visit(payload);
+  for (const block of nodeBlocks) {
+    if (block.markdown) visit(block.markdown);
+  }
+  return candidates;
+}
+
+function normalizeEvidence(v: unknown): EvidenceItemDisplay[] {
+  return recordList(v).map((item, index) => ({
+    source: stringValue(valueByKeys(item, ["source", "platform", "type"])),
+    title:
+      stringValue(valueByKeys(item, ["title", "headline", "name"])) ??
+      `Evidence ${index + 1}`,
+    url: stringValue(valueByKeys(item, ["url", "link", "href"])),
+    metric: stringValue(valueByKeys(item, ["metric", "score", "engagement", "count"])),
+    summary: stringValue(valueByKeys(item, ["quote_or_summary", "summary", "quote", "relevance", "why_it_matters"])),
+  }));
+}
+
+function normalizePersona(v: unknown): CreatorPersonaDisplay | null {
+  if (!isRecord(v)) return null;
+  const persona: CreatorPersonaDisplay = {
+    voiceSummary: stringValue(valueByKeys(v, ["voice_summary", "voiceSummary", "summary", "persona_prompt"])),
+    toneTraits: stringList(valueByKeys(v, ["tone_traits", "toneTraits", "tone", "traits"])),
+    audience: stringValue(valueByKeys(v, ["audience", "target_audience", "targetAudience"])),
+    contentFormats: stringList(valueByKeys(v, ["content_formats", "contentFormats", "formats"])),
+    recurringThemes: stringList(valueByKeys(v, ["recurring_themes", "recurringThemes", "themes", "topics"])),
+    visualStyle: stringValue(valueByKeys(v, ["visual_style", "visualStyle", "aesthetic"])),
+    doSay: stringList(valueByKeys(v, ["do_say", "doSay"])),
+    doNotSay: stringList(valueByKeys(v, ["do_not_say", "doNotSay", "avoid"])),
+  };
+  return Object.values(persona).some((value) => (Array.isArray(value) ? value.length : Boolean(value)))
+    ? persona
+    : null;
+}
+
+function normalizeTrend(v: unknown): TrendOpportunityDisplay | null {
+  if (!isRecord(v)) return null;
+  const title = stringValue(valueByKeys(v, ["title", "trend", "name", "opportunity"]));
+  if (!title) return null;
+  return {
+    title,
+    whyNow: stringValue(valueByKeys(v, ["why_now", "whyNow", "why", "rationale"])),
+    audience: stringValue(valueByKeys(v, ["audience", "target_audience", "targetAudience"])),
+    confidence: stringValue(valueByKeys(v, ["confidence", "score"])),
+    risk: stringValue(valueByKeys(v, ["risk", "watchout", "concern"])),
+    recommendedPlatforms: stringList(valueByKeys(v, ["recommended_platforms", "recommendedPlatforms", "platforms"])),
+    evidence: normalizeEvidence(valueByKeys(v, ["evidence", "sources", "proof"])).slice(0, 4),
+  };
+}
+
+function normalizeAsset(v: unknown): PlatformAssetDisplay | null {
+  if (!isRecord(v)) return null;
+  const platform = stringValue(valueByKeys(v, ["platform", "channel", "destination"])) ?? "Campaign";
+  const body =
+    stringValue(valueByKeys(v, ["body", "script", "post", "copy", "text"])) ??
+    stringValue(valueByKeys(v, ["caption", "hook"]));
+  if (!body) return null;
+  return {
+    platform,
+    format: stringValue(valueByKeys(v, ["format", "type"])),
+    hook: stringValue(valueByKeys(v, ["hook", "opening", "headline"])),
+    body,
+    caption: stringValue(valueByKeys(v, ["caption", "short_caption", "shortCaption"])),
+    cta: stringValue(valueByKeys(v, ["cta", "call_to_action", "callToAction"])),
+    productionNotes: stringValue(valueByKeys(v, ["production_notes", "productionNotes", "notes"])),
+  };
+}
+
+function normalizeVisual(v: unknown, index: number): VisualDirectionDisplay | null {
+  if (typeof v === "string" && v.trim()) {
+    return { title: `Visual direction ${index + 1}`, prompt: v.trim(), notes: [] };
+  }
+  if (!isRecord(v)) return null;
+  const prompt = stringValue(valueByKeys(v, ["prompt", "image_prompt", "imagePrompt", "description", "concept"]));
+  if (!prompt) return null;
+  return {
+    title: stringValue(valueByKeys(v, ["title", "name", "format"])) ?? `Visual direction ${index + 1}`,
+    prompt,
+    notes: stringList(valueByKeys(v, ["notes", "frames", "shot_list", "shotList", "on_screen_text", "onScreenText"])),
+  };
+}
+
+function normalizePlanItem(v: unknown, index: number): PostingPlanItemDisplay | null {
+  if (typeof v === "string" && v.trim()) {
+    return { timing: `Step ${index + 1}`, action: v.trim(), channel: null };
+  }
+  if (!isRecord(v)) return null;
+  const action = stringValue(valueByKeys(v, ["action", "post", "task", "description", "copy"]));
+  if (!action) return null;
+  return {
+    timing: stringValue(valueByKeys(v, ["timing", "day", "time", "sequence"])) ?? `Step ${index + 1}`,
+    action,
+    channel: stringValue(valueByKeys(v, ["channel", "platform", "destination"])),
+  };
+}
+
+function mergeCampaignRecords(records: Record<string, unknown>[]): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  for (const rec of records) {
+    for (const [key, value] of Object.entries(rec)) {
+      if (merged[key] === undefined) merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+export function extractCampaignDisplay(payload: unknown): CampaignDisplayModel {
+  const fallbackBlocks = extractNodeOutputs(payload);
+  const inputs = extractInputs(payload);
+  const topic =
+    stringValue(inputs?.topic) ??
+    stringValue(inputs?.niche) ??
+    stringValue(inputs?.campaign_topic) ??
+    null;
+
+  const campaignRecords = collectCampaignCandidates(payload, fallbackBlocks);
+  const campaignRoot = mergeCampaignRecords(campaignRecords);
+  const pack = valueByKeys(campaignRoot, ["campaign_pack", "campaignPack"]);
+  const packRecord = isRecord(pack) ? pack : campaignRoot;
+
+  const trendOpportunities = recordList(
+    valueByKeys(campaignRoot, ["trend_opportunities", "trendOpportunities", "trends", "opportunities"]),
+  )
+    .map(normalizeTrend)
+    .filter((x): x is TrendOpportunityDisplay => Boolean(x));
+
+  const platformSource =
+    valueByKeys(packRecord, ["platform_assets", "platformAssets", "assets", "deliverables"]) ??
+    valueByKeys(campaignRoot, ["platform_assets", "platformAssets"]);
+  let platformAssets = recordList(platformSource)
+    .map(normalizeAsset)
+    .filter((x): x is PlatformAssetDisplay => Boolean(x));
+
+  if (!platformAssets.length) {
+    platformAssets = fallbackBlocks
+      .filter((block) => ["copy", "creative_brief", "campaign_strategist"].includes(block.nodeId) && block.markdown)
+      .slice(0, 4)
+      .map((block) => ({
+        platform: block.nodeId === "copy" ? "Multi-platform copy" : block.nodeId.replaceAll("_", " "),
+        format: "Draft",
+        hook: null,
+        body: block.markdown,
+        caption: null,
+        cta: null,
+        productionNotes: "Imported from the workflow output.",
+      }));
+  }
+
+  const visualSource =
+    valueByKeys(packRecord, ["visual_assets", "visualAssets", "visual_plan", "visualPlan", "visual_direction"]) ??
+    valueByKeys(campaignRoot, ["visual_assets", "visualAssets", "visualPlan"]);
+  const visualDirections = (Array.isArray(visualSource) ? visualSource : visualSource ? [visualSource] : [])
+    .map(normalizeVisual)
+    .filter((x): x is VisualDirectionDisplay => Boolean(x));
+
+  const planSource =
+    valueByKeys(packRecord, ["posting_plan", "postingPlan", "schedule", "sequence"]) ??
+    valueByKeys(campaignRoot, ["posting_plan", "postingPlan"]);
+  const postingPlan = (Array.isArray(planSource) ? planSource : planSource ? [planSource] : [])
+    .map(normalizePlanItem)
+    .filter((x): x is PostingPlanItemDisplay => Boolean(x));
+
+  const evidence = [
+    ...normalizeEvidence(valueByKeys(packRecord, ["evidence", "sources", "proof"])),
+    ...trendOpportunities.flatMap((trend) => trend.evidence),
+  ].filter((item, index, all) => all.findIndex((x) => `${x.title}:${x.url}` === `${item.title}:${item.url}`) === index);
+
+  const campaignBigIdea = stringValue(
+    valueByKeys(packRecord, ["campaign_big_idea", "campaignBigIdea", "big_idea", "bigIdea", "idea"]),
+  );
+  const selectedTrendTitle = selectedTrendTitleValue(packRecord);
+
+  return {
+    hasCampaignShape: campaignRecords.length > 0,
+    topic,
+    persona: normalizePersona(valueByKeys(campaignRoot, ["creator_persona", "creatorPersona", "persona"])),
+    topRecommendation:
+      stringValue(valueByKeys(packRecord, ["top_recommendation", "topRecommendation", "recommendation"])) ??
+      campaignBigIdea,
+    campaignBigIdea,
+    selectedTrendTitle,
+    trendOpportunities,
+    platformAssets,
+    visualDirections,
+    postingPlan,
+    evidence,
+    fallbackBlocks,
+  };
+}

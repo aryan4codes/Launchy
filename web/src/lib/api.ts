@@ -80,6 +80,26 @@ export async function putWorkflow(id: string, spec: WorkflowSpecJson): Promise<W
   );
 }
 
+export async function startCreatorRun(body: {
+  topic: string
+  create_images: boolean
+  audience?: string
+  creator_persona?: string
+  tone_traits?: string[]
+  content_formats?: string[]
+  platforms?: string
+  instagram_url?: string | null
+  prior_context?: string | null
+}): Promise<{ run_id: string; workflow_id: string }> {
+  return j(
+    await fetch(apiUrl('/creator-runs'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  )
+}
+
 export async function startWorkflowRun(
   workflowId: string,
   inputs: Record<string, unknown>,

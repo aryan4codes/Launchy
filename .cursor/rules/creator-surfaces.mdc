@@ -1,0 +1,13 @@
+---
+description: Creator-facing /campaigns UI and API conventions
+globs: web/src/pages/Campaign*.tsx,http_api/routes/creator_runs.py
+---
+
+# Creator surfaces
+
+- **Start runs from the product** via `POST /creator-runs` with the `CreatorRunCreate` body. Do **not** send raw `workflow_id` from creator pages; the server maps `create_images` and persona fields to cloned templates (`launchy_virality` vs `launchy_virality_plus_images`).
+- **Flow**: `/campaigns` (landing form) → `navigate(/campaigns/:runId)` → live progress + results. No separate `/creator` route or query-param hacks for “starting”.
+- **Visual parity**: `/campaigns` and `/campaigns/:runId` should share tokens with [web/src/pages/LandingPage.tsx](web/src/pages/LandingPage.tsx) — warm `#fdf7ee` / dark background, gradient wash blobs, gradient primary CTA, pill/chip language, `ThemeToggle`, Studio/Home links in the header.
+- **Technical deep-link**: optional link to `/results/:runId`; primary outcome is the creator campaign page.
+- **prior_context**: optional string on `POST /creator-runs`; merged into workflow `creator_persona` under a clear delimiter so research agents see past-run memory.
+- **Browser memory**: saved persona/campaign snippets live in [web/src/lib/creatorContextMemory.ts](web/src/lib/creatorContextMemory.ts) (`localStorage`, capped list). Not synced across devices.

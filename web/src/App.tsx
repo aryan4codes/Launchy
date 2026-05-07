@@ -1,5 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
+import CampaignLandingPage from "@/pages/CampaignLandingPage";
+import CampaignPage from "@/pages/CampaignPage";
+import LandingPage from "@/pages/LandingPage";
 import ResultsPage from "@/pages/ResultsPage";
 import WorkflowStudio from "@/WorkflowStudio";
 
@@ -12,7 +15,10 @@ export default function App() {
   return (
     <BrowserRouter basename={basename}>
       <Routes>
-        <Route path="/" element={<WorkflowStudio />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/studio" element={<WorkflowStudio />} />
+        <Route path="/campaigns" element={<CampaignLandingPage />} />
+        <Route path="/campaigns/:runId" element={<CampaignPage />} />
         <Route path="/results/:runId" element={<ResultsPage />} />
       </Routes>
     </BrowserRouter>

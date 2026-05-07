@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from workflow.engine import WorkflowEngine, _detect_cycle, topological_order
+from workflow.engine import WorkflowEngine, _detect_cycle, topological_levels, topological_order
 from workflow.schema import EdgeSpec, NodeSpec, WorkflowSpec
 
 
@@ -28,6 +28,25 @@ def _tiny_linear() -> WorkflowSpec:
 def test_topological_order_respects_dependency_chain() -> None:
     wf = _tiny_linear()
     assert topological_order(wf.nodes, wf.edges) == ["a", "b", "c"]
+
+
+def test_topological_levels_parallel_branches() -> None:
+    wf = WorkflowSpec(
+        name="dia",
+        nodes=[
+            NodeSpec(id="a", type="trigger.input", params={}),
+            NodeSpec(id="b", type="trigger.input", params={}),
+            NodeSpec(id="c", type="trigger.input", params={}),
+            NodeSpec(id="d", type="trigger.input", params={}),
+        ],
+        edges=[
+            EdgeSpec(source="a", target="b"),
+            EdgeSpec(source="a", target="c"),
+            EdgeSpec(source="b", target="d"),
+            EdgeSpec(source="c", target="d"),
+        ],
+    )
+    assert topological_levels(wf.nodes, wf.edges) == [["a"], ["b", "c"], ["d"]]
 
 
 def test_cycle_detection_true() -> None:

@@ -147,16 +147,16 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "source.instagram",
-    label: "Instagram hashtags (Apify)",
-    short: "Scrapes public hashtag posts via Apify.",
+    label: "Instagram (Apify)",
+    short: "Hashtag search or creator profile posts via Apify.",
     description:
-      "Pulls recent hashtag posts/reels as a text digest (default actor apify/instagram-hashtag-scraper). Runs whenever this block is on the canvas. Needs APIFY_API_TOKEN and apify-client (`uv sync --extra instagram`). Optional instagram_hashtags in run inputs overrides the template (comma-separated).",
+      "Two modes: **hashtags** (default actor apify/instagram-hashtag-scraper) or **creator_profiles** (posts from handles — default actor instagram-scraper/instagram-profile-posts-scraper). Creator mode usually follows an upstream scout agent that outputs comma-separated usernames. Needs APIFY_API_TOKEN and `uv sync --extra instagram`.",
     category: "source",
     icon: Hash,
-    previewKeys: ["hashtags_template", "result_limit"],
-    templateKeys: ["hashtags_template"],
-    inspectorAdvancedKeys: ["result_limit"],
-    inspectorAdvancedSummary: "Posts per hashtag (1–50). Higher uses more Apify quota.",
+    previewKeys: ["scraping_mode", "hashtags_template", "usernames_template"],
+    templateKeys: ["hashtags_template", "usernames_template"],
+    inspectorAdvancedKeys: ["result_limit", "posts_per_profile"],
+    inspectorAdvancedSummary: "Hashtag results limit (1–50); profile mode uses posts_per_profile (5–50 per creator, Apify minimum 5).",
   },
   {
     type: "source.scrape_url",
@@ -172,10 +172,10 @@ const CATALOG: NodeCatalogEntry[] = [
   },
   {
     type: "agent.crewai",
-    label: "AI Agent Task",
-    short: "Runs a single CrewAI agent task.",
+    label: "Research or writing step",
+    short: "Uses an AI worker to produce one focused output.",
     description:
-      "Spins up a one-shot CrewAI agent with the given role/goal/backstory, runs the task description against upstream context, and returns the raw text.",
+      "Runs one focused research, strategy, or writing step against upstream context, then returns text for the next step.",
     category: "agent",
     icon: Bot,
     previewKeys: ["role"],
@@ -369,7 +369,7 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     id: "avcm_classic",
     label: "Launchy Virality",
     description:
-      "Reddit + Serper + Instagram hashtags (Apify) → psych → angles → copy → creative brief → score. Remove the Instagram source block in the canvas if you do not want Apify.",
+      "Reddit + Serper + Instagram creator posts (scout → Apify) → psych → angles → copy → creative brief → score. Remove the Instagram block or switch it to hashtag-only in the inspector if you want a different scrape.",
     tagline: "Research, angles, copy, and scoring",
     badge: "Recommended",
     category: "general",
@@ -378,7 +378,7 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     id: "launchy_virality_plus_images",
     label: "Launchy Virality + Images",
     description:
-      "Full research stack with Instagram hashtag scrape (Apify) plus a FLUX Dev image branch. Delete the Instagram source node to skip Apify for that run.",
+      "Full research with Instagram creator scout + profile post scrape (Apify), plus FLUX Dev hero images. Delete the Instagram nodes or change mode in the inspector to adjust spend.",
     tagline: "Research, copy, scoring, and stunning image variants",
     badge: "New",
     category: "general",

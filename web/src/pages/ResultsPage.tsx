@@ -102,7 +102,8 @@ export default function ResultsPage() {
     for (const block of nodeBlocks) {
       const md = block.markdown;
       if (!md) continue;
-      if (md.includes("### Instagram hashtag signals")) fetched = true;
+      if (md.includes("### Instagram hashtag signals") || md.includes("### Instagram creator post signals"))
+        fetched = true;
       const actorMatch = md.match(/^Actor:\s+(.+)$/m);
       if (actorMatch && !actor) actor = actorMatch[1]?.trim() ?? null;
       const itemMatches = md.match(/^- \(.+likes.+comments\)/gm);
@@ -257,7 +258,7 @@ export default function ResultsPage() {
           <p className="text-sm text-muted-foreground">{err ?? "Nothing to show yet."}</p>
           <Link
             className="mt-6 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
-            to="/"
+            to="/studio"
           >
             Back to studio
           </Link>
@@ -272,7 +273,7 @@ export default function ResultsPage() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-3 px-4 py-2.5 md:items-center md:justify-between md:gap-4">
           <div className="min-w-0 flex-1">
             <Link
-              to="/"
+              to="/studio"
               className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -294,6 +295,12 @@ export default function ResultsPage() {
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <ThemeToggle />
+            <Link
+              to={`/campaigns/${encodeURIComponent(runId)}`}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-primary/35 bg-primary/10 px-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+            >
+              Open Creator Campaign
+            </Link>
             <Badge variant="outline" className={cn("gap-1.5 text-[11px]", statusBadge)}>
               <StatusIcon className={cn("h-3 w-3", statusColor)} />
               {status}
@@ -324,9 +331,23 @@ export default function ResultsPage() {
         ) : null}
 
         <section id="summary" className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <Rocket className="h-3.5 w-3.5 text-primary" aria-hidden />
-            How to use this page
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <Rocket className="h-3.5 w-3.5 text-primary" aria-hidden />
+                Operator results
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This page keeps workflow details, source outputs, and diagnostics. For a simpler creator workspace, open
+                the campaign view.
+              </p>
+            </div>
+            <Link
+              to={`/campaigns/${encodeURIComponent(runId)}`}
+              className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-foreground px-4 text-xs font-semibold text-background"
+            >
+              Open Creator Campaign
+            </Link>
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-3">
             <div className="rounded-lg bg-muted/30 px-3 py-3 text-sm">

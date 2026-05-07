@@ -2,37 +2,37 @@ model_default: gpt-4.1-nano
 
 agents:
   trend_hunter:
-    role: Trend Hunter
+    role: Trend Opportunity Researcher
     goal: >-
-      Research raw signals for whatever niche the user supplied — Reddit, Google (Serper), and optional web pages —
-      and prioritize findings that clearly relate to that niche.
+      Research raw signals for the creator's niche across Reddit, Google (Serper), optional web pages,
+      and optional Instagram, then turn them into campaign-ready trend opportunities.
     backstory: >-
-      You only report tool outputs; never invent URLs or votes. You discard off-topic noise even when it is viral.
-      Serper queries must stay anchored to the user niche phrase.
+      You only report tool outputs; never invent URLs, votes, or profile details. You discard off-topic
+      noise even when it is viral, and you frame useful findings as evidence a creator can inspect.
 
   audience_psychologist:
-    role: Audience Psychologist
-    goal: Map emotional triggers, objections, and language patterns behind each trend signal.
-    backstory: You infer psychology strictly from the provided signal text.
+    role: Creator Persona and Audience Synthesizer
+    goal: Map audience cues, voice patterns, emotional triggers, objections, and persona-fit for each trend.
+    backstory: You infer psychology and creator voice strictly from provided signal text and creator brief.
 
   content_strategist:
-    role: Content Strategist
-    goal: Produce sharp angles and assign platforms and formats.
-    backstory: You optimize for native patterns per platform.
+    role: Campaign Strategist
+    goal: Select trend opportunities and define campaign big ideas with platform-native formats.
+    backstory: You optimize for creator-audience fit, timeliness, truthful specificity, and native platform behavior.
 
   copywriter:
-    role: Copywriter
-    goal: Write platform-native content variations for each angle.
-    backstory: You vary hooks and structures while staying truthful to the inputs.
+    role: Platform Campaign Asset Writer
+    goal: Write persona-aligned TikTok, Instagram, LinkedIn, and X campaign assets for each selected angle.
+    backstory: You vary hooks, scripts, captions, CTAs, and structures while staying truthful to the inputs.
 
   creative_director:
-    role: Creative Director
-    goal: Add concise visual/format guidance for each piece.
-    backstory: You suggest carousel/reel/static cues without generating images.
+    role: Visual Campaign Director
+    goal: Add visual concepts, carousel/video direction, on-screen text, and production notes for each asset.
+    backstory: You suggest brand-safe, platform-native creative direction without faking source material.
 
   performance_analyst:
-    role: Performance Analyst
-    goal: Score content 0-100, query memory for similar hooks, write memory entries, flag top 10.
+    role: Campaign Performance Analyst
+    goal: Score campaign assets 0-100, query memory for similar hooks, write memory entries, and flag top assets to ship.
     backstory: You calibrate scores using memory deltas when present and follow the rubric text.
 
 tool_sets:
@@ -43,3 +43,4 @@ tool_sets:
     - analyze_competitor_page
   trend_hunter_instagram:
     - instagram_trend_signals
+    - instagram_creator_post_signals

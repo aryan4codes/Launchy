@@ -2,22 +2,16 @@
 
 **Launchy** helps you turn a niche or product idea into **scroll-stopping posts and creatives** — with real-world context from social signals (especially **Reddit**), structured AI drafts, scoring, optional **hero images**, and a path to refine what worked over time.
 
-In plain terms:
-
-1. **You describe a niche.** Launchy gathers trends and language from Reddit and search.
-2. **AI agents collaborate** — they shape angles, copy, headlines, briefs — like a tight marketing pod.
-3. **You run it from the CLI, over HTTP, or in the Workflow Studio** — connect blocks visually, plug in templates, hit Run, inspect results.
-
-Behind the curtain this repo ships two complementary experiences:
-
-| Path | Who it’s for |
-| ------ | ----------- |
-| **Classic pipeline** | One-command runs (`avcm run`): niche → signals → drafts → structured JSON on disk |
-| **Workflow canvas** | Build your own graphs (sources, CrewAI agents, transforms, FLUX Dev image blocks, collectors) saved under `workflows/stored/` and executed async with streamed events |
+![Digital Twin product landing (hero, Digital Twin CTAs, floating cards)](outputs/landing.png)
 
 Technical stack in one breath: Python **3.11**, **`uv`** for deps, **CrewAI** agents, **FastAPI**, **OpenAI** (LLM + embeddings), **Leonardo FLUX Dev** (workflow image generation), **ChromaDB** for long-run memory (`text-embedding-3-small`). **Instagram** ingestion is opt-in via Apify (`--instagram` / RunConfig flag).
 
 The CLI binary is still **`avcm`** — same codebase, same orchestration (**`PipelineController`**) whether you ship the classic API routes or workflow routes.
+
+### Product landing
+
+The marketing home (**`/`**) lives in [`web/src/pages/LandingPage.tsx`](web/src/pages/LandingPage.tsx). It frames the creator path as a **Digital Twin**: trend scan, voice lock, publish plan, and evidence cards; primary CTA to **`/campaigns`**, secondary to **`/studio`**; integrations strip for signals and platforms.
+
 
 ### Workflow Studio & launch output
 
@@ -134,4 +128,4 @@ uv run ruff check core agents tools memory api cli workflow tests evals
 
 ## Contributing & internals
 
-Contributor notes and MCP hints live in **[AGENTS.md](AGENTS.md)**. Cursor rules: **`.cursor/rules/`**.
+Contributor notes and MCP hints live in **[AGENTS.md](AGENTS.md)**. Cursor rules: **[`.cursor/rules/`](.cursor/rules/)**. Project agent skills (marketing surfaces): **[`.cursor/skills/`](.cursor/skills/)**.

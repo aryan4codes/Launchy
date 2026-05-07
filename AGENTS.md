@@ -15,6 +15,12 @@
 - **`cli/`** and **`api/`** are thin shims over `PipelineController` plus workflow HTTP routes.
 - **`workflow/`** — DAG specs, node handlers, and `WorkflowEngine`. **Product stance**: prioritize non-technical creators — guided inspector fields, minimal jargon in copy, collapsible tuning (see `workflow/AGENTS.md` and web inspector).
 
+## Web app & marketing (`web/`)
+
+- **Vite + React** SPA: **`/`** — [`web/src/pages/LandingPage.tsx`](web/src/pages/LandingPage.tsx); **`/campaigns`** — creator run start + progress ([`CampaignLandingPage.tsx`](web/src/pages/CampaignLandingPage.tsx), [`CampaignPage.tsx`](web/src/pages/CampaignPage.tsx)); **`/studio`** — Workflow Studio canvas.
+- **Product language on marketing surfaces**: use **Digital Twin** for the creator journey (hero CTAs, section headers); backend and docs may still refer to **`avcm`**, **`RunConfig`**, and pipeline terminology.
+- **README screenshot** for the hero: [`outputs/landing.png`](outputs/landing.png) (other product captures under [`outputs/`](outputs/)).
+
 ## External MCP servers (Cursor)
 
 - **`user-apify`**: design-time only when authoring **`tools/instagram_apify_tool.py`**. Use MCP `search-actors` / `fetch-actor-details` for actor schemas before changing Apify inputs.

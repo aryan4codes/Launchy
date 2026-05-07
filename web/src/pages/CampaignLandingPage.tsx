@@ -352,13 +352,13 @@ export default function CampaignLandingPage() {
                 <div>
                   <h2 className="text-2xl font-semibold tracking-tight text-zinc-950">
                     Build your{" "}
-                    <span className="bg-gradient-to-r from-fuchsia-500 to-orange-400 bg-clip-text text-transparent">creator persona</span>
+                    <span className="bg-gradient-to-r from-fuchsia-500 to-orange-400 bg-clip-text text-transparent">Digital Twin</span>
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-zinc-700">
                     Keep it lightweight. The goal is enough taste and context for campaign assets to feel personal.
                   </p>
                 </div>
-                <span className="hidden rounded-full bg-fuchsia-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-700 ring-1 ring-fuchsia-200 sm:inline-flex">
+                <span className="hidden rounded-full bg-fuchsia-100 px-3 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-fuchsia-700 shadow-[0_4px_12px_rgba(0,0,0,0.15)] ring-1 ring-fuchsia-200 sm:inline-flex">
                   3 min setup
                 </span>
               </div>
@@ -430,16 +430,16 @@ export default function CampaignLandingPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/40 p-4 dark:border-border dark:bg-muted/30">
-                  <div className="text-sm font-semibold text-zinc-950 dark:text-foreground">Saved memory (this browser)</div>
+                <div className="rounded-2xl border border-indigo-200/70 bg-indigo-50/40 p-4 dark:border-border dark:bg-white/30">
+                  <div className="text-sm font-semibold text-zinc-950 dark:text-black">Saved memory (this browser)</div>
                   <p className="mt-1 text-xs leading-5 text-zinc-600 dark:text-muted-foreground">
                     Reuse summaries from past runs. Save them on the campaign page after a run finishes.
                   </p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    <label className="grid gap-1 text-xs font-medium text-zinc-800 dark:text-foreground">
+                    <label className="grid gap-1 text-xs font-medium text-zinc-800 dark:text-violet-500">
                       Add persona memory
                       <select
-                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-border dark:bg-background"
+                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-950 dark:border-border dark:bg-white dark:text-black"
                         defaultValue=""
                         onChange={(e) => {
                           const v = e.target.value;
@@ -458,7 +458,7 @@ export default function CampaignLandingPage() {
                     <label className="grid gap-1 text-xs font-medium text-zinc-800 dark:text-foreground">
                       Add campaign memory
                       <select
-                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm dark:border-border dark:bg-background"
+                        className="rounded-lg border border-zinc-200 bg-white px-2 py-2 text-sm text-zinc-950 dark:border-border dark:bg-white dark:text-black"
                         defaultValue=""
                         onChange={(e) => {
                           const v = e.target.value;
@@ -479,7 +479,7 @@ export default function CampaignLandingPage() {
                     value={priorContext}
                     onChange={(e) => setPriorContext(e.target.value)}
                     placeholder="Saved snippets stack here. Edit before generating."
-                    className="mt-3 min-h-24 border-indigo-200 bg-white text-sm dark:border-border dark:bg-background"
+                    className="mt-3 min-h-24 border-indigo-200 bg-white text-sm text-zinc-950 dark:border-border dark:bg-white"
                   />
                 </div>
 
@@ -504,16 +504,16 @@ export default function CampaignLandingPage() {
                   </span>
                 </label>
 
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-rose-200/80 bg-white/90 p-4 text-left shadow-sm ring-1 ring-rose-100/60 transition hover:bg-white dark:border-border dark:bg-card dark:ring-border">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-rose-200/80 bg-white/90 p-4 text-left shadow-sm ring-1 ring-rose-100/60 transition hover:bg-white dark:border-border dark:bg-[#e3e3ee] dark:ring-border">
                   <input
                     type="checkbox"
                     checked={createImages}
                     onChange={(e) => setCreateImages(e.target.checked)}
-                    className="mt-1 h-4 w-4 shrink-0 rounded border-rose-300 text-fuchsia-600 focus:ring-fuchsia-400"
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-rose-300 bg-white dark:bg-white text-fuchsia-600 focus:ring-fuchsia-400"
                   />
                   <div>
-                    <span className="text-sm font-semibold text-zinc-950 dark:text-foreground">Also generate images</span>
-                    <p className="mt-1 text-xs leading-5 text-zinc-600 dark:text-muted-foreground">
+                    <span className="text-sm font-semibold text-zinc-950 dark:text-black">Also generate images</span>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600 dark:text-black">
                       Creates hero visuals for your campaign. Slower and uses image generation capacity.
                     </p>
                   </div>

@@ -117,6 +117,110 @@ export async function getWorkflowRun(runId: string): Promise<unknown> {
   return j(await fetch(apiUrl(`/workflow-runs/${encodeURIComponent(runId)}`)));
 }
 
+// --- Voice / Twin ---
+export type VoiceSampleRow = { kind: string; value: string };
+
+export type VoiceProfile = {
+  profile_id: string;
+  creator_name: string;
+  sample_count: number;
+  tone_descriptors: string[];
+  vocabulary_signature: string[];
+  sentence_style: string;
+  do_list: string[];
+  dont_list: string[];
+  example_hooks: string[];
+  summary_block: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listVoiceProfiles(): Promise<VoiceProfile[]> {
+  return j(await fetch(apiUrl('/voice/profiles')));
+}
+
+export async function createVoiceProfile(payload: {
+  creator_name: string;
+  samples: VoiceSampleRow[];
+}): Promise<VoiceProfile> {
+  return j(
+    await fetch(apiUrl('/voice/profiles'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
+  );
+}
+
+/** Re-collect samples and re-run the profiler (PUT). */
+export async function updateVoiceProfile(
+  profileId: string,
+  body: { creator_name?: string; samples: VoiceSampleRow[] },
+): Promise<VoiceProfile> {
+  return j(
+    await fetch(apiUrl(`/voice/profiles/${encodeURIComponent(profileId)}`), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
+export async function patchVoiceLists(
+  profileId: string,
+  body: { do_list?: string[]; dont_list?: string[] },
+): Promise<VoiceProfile> {
+  return j(
+    await fetch(apiUrl(`/voice/profiles/${encodeURIComponent(profileId)}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
+export async function deleteVoiceProfile(profileId: string): Promise<void> {
+  const r = await fetch(apiUrl(`/voice/profiles/${encodeURIComponent(profileId)}`), {
+    method: 'DELETE',
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+export async function twinCreateSession(body: {
+  voice_profile_id?: string | null;
+}): Promise<{ session_id: string }> {
+  return j(
+    await fetch(apiUrl('/twin/sessions'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
+export async function twinListSessions(): Promise<
+  { session_id: string; voice_profile_id: string | null; created_at: string; updated_at: string }[]
+> {
+  return j(await fetch(apiUrl('/twin/sessions')));
+}
+
+export async function twinGetSession(sessionId: string): Promise<{ meta: unknown; messages: unknown[] }> {
+  return j(await fetch(apiUrl(`/twin/sessions/${encodeURIComponent(sessionId)}`)));
+}
+
+export async function twinPatchSession(
+  sessionId: string,
+  body: { voice_profile_id?: string | null },
+): Promise<{ ok: boolean }> {
+  return j(
+    await fetch(apiUrl(`/twin/sessions/${encodeURIComponent(sessionId)}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
 export function workflowRunWebSocketUrl(runId: string): string {
   if (API_ORIGIN) {
     const u = new URL(API_ORIGIN);

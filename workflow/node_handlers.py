@@ -31,7 +31,10 @@ from workflow.schema import (
     SerperSourceParams,
     TransformTemplateParams,
     TriggerInputParams,
+    VoiceLoadParams,
 )
+
+from voice.store import load_profile as load_voice_profile
 
 _LOG = logging.getLogger(__name__)
 
@@ -60,6 +63,24 @@ def _invoke_tool_like(tool: object, kwargs: dict[str, Any]) -> str | Any:
     if callable(_run):
         return _run(**kwargs)
     raise TypeError(f"No invokable run/invoke/_run on {type(tool)!r}")
+
+
+def handler_voice_load(ctx: NodeExecContext, params: dict[str, Any]) -> dict[str, Any]:
+    p = VoiceLoadParams.model_validate(params)
+    try:
+        prof = load_voice_profile(p.profile_id.strip())
+    except FileNotFoundError as e:
+        raise RuntimeError(f"Voice profile not found: {p.profile_id}") from e
+    return {
+        "voice_block": prof.summary_block,
+        "profile_id": prof.profile_id,
+        "creator_name": prof.creator_name,
+        "tone_descriptors": prof.tone_descriptors,
+        "do_list": prof.do_list,
+        "dont_list": prof.dont_list,
+        "example_hooks": prof.example_hooks,
+        "sample_count": prof.sample_count,
+    }
 
 
 def _run_crewai_single_task(ctx: NodeExecContext, p: CrewAIParams) -> dict[str, Any]:
@@ -305,6 +326,10 @@ _REGISTRY: dict[str, tuple[dict[str, Any], Any]] = {
     "source.serper": (SerperSourceParams.model_json_schema(), lambda ctx, raw: handler_serper(ctx, raw)),
     "source.scrape_url": (ScrapeURLParams.model_json_schema(), lambda ctx, raw: handler_scrape(ctx, raw)),
     "memory.query": (MemoryQueryParams.model_json_schema(), lambda ctx, raw: handler_memory_query(ctx, raw)),
+    "voice.load": (
+        VoiceLoadParams.model_json_schema(),
+        lambda ctx, raw: handler_voice_load(ctx, raw),
+    ),
     "memory.write": (MemoryWriteParams.model_json_schema(), lambda ctx, raw: handler_memory_write(ctx, raw)),
     "transform.template": (
         TransformTemplateParams.model_json_schema(),

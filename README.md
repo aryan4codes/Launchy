@@ -79,16 +79,29 @@ uv run avcm memory ingest path/to/results.csv
 uv run avcm serve --port 8000
 ```
 
+Classic runs accept an optional **`--voice-profile-id`** UUID from Train your Twin (saved JSON under `voice/profiles/`):
+
+```bash
+uv run avcm run --niche "AI SaaS" --voice-profile-id "<profile-uuid>"
+```
+
+In **`web`** (Vite dev or static `/app`): **`/`** Workflow Studio · **`/voice`** train voice · **`/twin`** Digital Twin chat (SSE + tools).
+
 ---
 
 ## HTTP API
 
-- **`POST /runs/`** — body matches **`RunConfig`** (`niche`, optional `platforms`, `angles`, variations, `include_instagram`, …)
+- **`POST /runs/`** — body matches **`RunConfig`** (`niche`, optional `platforms`, `angles`, variations, `include_instagram`, `voice_profile_id`, …)
 - **`GET /runs/{run_id}`** — read **`outputs/{run_id}.json`** written by each run (filesystem-backed)
 - **`GET /runs/{run_id}/pieces`** — content pieces JSON only
 - **`POST /memory/ingest`** — multipart CSV upload (same shape as CLI)
 - **`GET /health`**
-- **Workflow canvas**
+- **Voice profiles**
+  - **`GET|POST /voice/profiles`** — list / create trainer (samples: `text`, `url`, `reddit_user`)
+  - **`GET|PUT|PATCH|DELETE /voice/profiles/{id}`**
+- **Digital Twin chat**
+  - **`POST /twin/sessions`**, **`GET /twin/sessions`**, **`GET /twin/sessions/{id}`**, **`PATCH`** voice on session
+  - **`POST /twin/sessions/{id}/messages`** — SSE stream (`Accept: text/event-stream`)
   - **`GET /workflows/node-types`** — JSON Schema per node kind (`trigger.input`, `agent.crewai`, `media.gemini_image`, …)
   - **`GET /workflows`**, **`POST /workflows`**, **`GET|PUT|DELETE /workflows/{id}`** — saved graphs in **`workflows/stored/`**
   - **`GET /workflows/templates`**, **`GET /workflows/templates/{id}`**, **`POST /workflows/clone-template`**

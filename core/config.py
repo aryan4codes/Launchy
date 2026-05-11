@@ -56,6 +56,7 @@ class RunConfig(BaseModel):
     top_k_memory: int = Field(default=5, ge=1, le=20)
     include_instagram: bool = False
     run_id: str | None = None
+    voice_profile_id: str | None = None
 
     def resolved_run_id(self) -> str:
         return self.run_id or str(uuid.uuid4())

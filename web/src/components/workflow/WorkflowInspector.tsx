@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { Node } from 'reactflow'
 
 import { SchemaForm, mergedParams } from '@/components/SchemaForm'
@@ -122,6 +123,20 @@ export function WorkflowInspector({
           <div className="truncate font-mono text-sm font-semibold text-foreground">{selected.id}</div>
         </div>
         <p className="text-[12px] leading-relaxed text-muted-foreground">{catalog.description}</p>
+        {wfType === 'voice.load' ? (
+          <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/[0.07] px-3 py-2.5 text-[11px] leading-relaxed dark:bg-emerald-500/[0.09]">
+            <p className="font-medium text-emerald-950 dark:text-emerald-50">Where does the ID come from?</p>
+            <p className="mt-1 text-muted-foreground">
+              Open the{' '}
+              <Link to="/voice" className="font-medium text-foreground underline-offset-4 hover:underline">
+                Voice
+              </Link>{' '}
+              page, create a profile, then copy its <code className="rounded bg-background/80 px-1 font-mono text-[10px]">profile_id</code> into
+              the field below. New Brand voice blocks use whichever profile is <strong className="text-foreground">Set active</strong> on Voice as a
+              starting point — you can still change the ID here per workflow.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <Tabs defaultValue="form" className="flex min-h-0 flex-1 flex-col">

@@ -15,6 +15,9 @@ from http_api.routes import runs as runs_routes
 from http_api.routes import workflow_runs as wf_runs_routes
 from http_api.routes import workflows as workflows_routes
 
+from http_api.routes import twin as twin_routes
+from http_api.routes import voice as voice_routes
+
 load_dotenv()
 
 app = FastAPI(title="AVCM API", version="0.1.0")
@@ -31,6 +34,8 @@ app.include_router(runs_routes.router, prefix="/runs", tags=["runs"])
 app.include_router(memory_routes.router, prefix="/memory", tags=["memory"])
 app.include_router(workflows_routes.router, prefix="/workflows", tags=["workflows"])
 app.include_router(wf_runs_routes.router, prefix="/workflow-runs", tags=["workflow-runs"])
+app.include_router(voice_routes.router, prefix="/voice", tags=["voice"])
+app.include_router(twin_routes.router, prefix="/twin", tags=["twin"])
 app.include_router(creator_runs_routes.router, prefix="/creator-runs", tags=["creator-runs"])
 _outputs_root = Path("outputs")
 _outputs_root.mkdir(parents=True, exist_ok=True)

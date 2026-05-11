@@ -1,5 +1,6 @@
 import { ArrowRight, Sparkles } from 'lucide-react'
 
+import { LaunchyFlowExplainer } from '@/components/LaunchyFlowExplainer'
 import { Separator } from '@/components/ui/separator'
 import { partitionTemplateIds, templateMeta } from '@/lib/nodeCatalog'
 import { cn } from '@/lib/utils'
@@ -121,6 +122,9 @@ export function EmptyCanvasOverlay({
               Pick a starter workflow, or drag from <strong className="font-medium text-foreground">Blocks</strong> on
               the left. Enter your topic on the first step, then <strong className="font-medium text-foreground">Run</strong>.
             </p>
+            <div className="pt-4 text-left">
+              <LaunchyFlowExplainer variant="compact" className="max-w-none bg-card/80" />
+            </div>
           </header>
 
           <Separator className="opacity-60" />

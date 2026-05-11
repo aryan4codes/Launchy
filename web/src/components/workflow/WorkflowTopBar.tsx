@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
   usePopover,
 } from '@/components/ui/popover'
+import { AppNav } from '@/components/AppNav'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { partitionTemplateIds, templateMeta } from '@/lib/nodeCatalog'
@@ -202,6 +203,10 @@ export function WorkflowTopBar({
           <Separator orientation="vertical" className="hidden h-8 sm:block opacity-60" />
 
           <ThemeToggle />
+
+          <Separator orientation="vertical" className="hidden h-8 md:block opacity-50" />
+
+          <AppNav className="text-xs sm:text-sm" />
 
           <div className="min-w-0 flex-1 basis-[min(100%,12rem)] sm:basis-[14rem]">
             <label

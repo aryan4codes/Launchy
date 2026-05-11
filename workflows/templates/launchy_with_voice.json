@@ -1,0 +1,42 @@
+{
+  "id": "launchy_with_voice",
+  "name": "Tweet with brand voice",
+  "nodes": [
+    {
+      "id": "in",
+      "type": "trigger.input",
+      "data": { "keys": ["topic"] },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "voice",
+      "type": "voice.load",
+      "data": { "profile_id": "" },
+      "position": { "x": 0, "y": 120 }
+    },
+    {
+      "id": "draft",
+      "type": "agent.crewai",
+      "data": {
+        "role": "Social copywriter",
+        "goal": "Write one scroll-stopping draft that matches the creator voice and topic.",
+        "backstory": "You follow the injected voice profile strictly and never invent fake metrics.",
+        "task_description_template": "Topic / niche: {{ topic }}\n\nVoice profile (must match tone, DO/DON'T, hooks):\n{{ voice.voice_block }}\n\nWrite exactly one short post suitable for X or LinkedIn (pick the more natural fit from the topic context). Lead with a strong hook; keep under ~350 characters unless the voice profile demands otherwise.",
+        "expected_output": "Post body only, no preamble."
+      },
+      "position": { "x": 320, "y": 60 }
+    },
+    {
+      "id": "out",
+      "type": "output.pieces",
+      "data": {},
+      "position": { "x": 640, "y": 60 }
+    }
+  ],
+  "edges": [
+    { "id": "e0", "source": "in", "target": "voice" },
+    { "id": "e1", "source": "voice", "target": "draft" },
+    { "id": "e2", "source": "in", "target": "draft" },
+    { "id": "e3", "source": "draft", "target": "out" }
+  ]
+}

@@ -73,8 +73,9 @@ export default defineConfig(({ mode }) => {
         "/artifacts": { target: apiProxyTarget, changeOrigin: true },
         "/runs": { target: apiProxyTarget, changeOrigin: true },
         "/memory": { target: apiProxyTarget, changeOrigin: true },
-        "/voice": { target: apiProxyTarget, changeOrigin: true },
-        "/twin": { target: apiProxyTarget, changeOrigin: true },
+        // Do not proxy `/voice` or `/twin` alone — those are SPA routes. API lives under these prefixes.
+        "/voice/profiles": { target: apiProxyTarget, changeOrigin: true },
+        "/twin/sessions": { target: apiProxyTarget, changeOrigin: true },
         "/ws": {
           target: wsProxyTarget,
           ws: true,

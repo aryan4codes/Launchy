@@ -17,6 +17,7 @@ from crewai_tools import SerperDevTool
 from http_api.deps import workflow_hub_singleton
 from http_api.workflow_storage import load_template
 from memory.chroma_client import get_performance_collection
+from memory.mongo_context import mongodb_configured, search_voice_context
 from tools.memory_query import build_memory_query_tool
 from tools.reddit_tool import reddit_top_signals
 from voice.store import load_profile as load_voice_profile
@@ -31,6 +32,7 @@ class TwinToolContext:
     tool_memory: bool = True
     tool_research: bool = True
     tool_workflow: bool = True
+    tool_mongodb: bool = True
 
 
 def openai_tool_schemas(ctx: TwinToolContext) -> list[dict[str, Any]]:
@@ -64,13 +66,46 @@ def openai_tool_schemas(ctx: TwinToolContext) -> list[dict[str, Any]]:
             },
         },
     ]
+    # List Mongo creator-knowledge before Chroma memory so the planner favors training samples for idea brainstorms.
+    if ctx.tool_mongodb and mongodb_configured():
+        tools.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": "query_creator_knowledge",
+                    "description": (
+                        "**Primary tool for this creator’s own content signals:** reel captions & transcripts, "
+                        "example hooks, vocabulary, DO/DON'T from Voice training (MongoDB). "
+                        "Use for **next reel/post topics**, hooks, angles, themes—especially when the user asks "
+                        "what to make next or how to stay on-brand. Call with 1–3 searches (e.g. `reel topics hooks`, "
+                        "`themes transcript`, niche keywords). **Prefer over query_memory** unless they ask what "
+                        "**scored well in past Launchy runs**."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Search phrase (topics, hooks, niche, product area).",
+                            },
+                        },
+                        "required": ["query"],
+                        "additionalProperties": False,
+                    },
+                },
+            }
+        )
     if ctx.tool_memory:
         tools.append(
             {
                 "type": "function",
                 "function": {
                     "name": "query_memory",
-                    "description": "Semantic search past scored content pieces in Chroma performance memory.",
+                    "description": (
+                        "Semantic search **Launchy performance-scored** content stored in Chroma—not Instagram/Voice "
+                        "training data. Use when the user asks what **performed well historically** in Launchy. "
+                        "Do **not** use as the main source for reel topic brainstorms (use query_creator_knowledge)."
+                    ),
                     "parameters": {
                         "type": "object",
                         "properties": {"query": {"type": "string"}},
@@ -103,10 +138,30 @@ def openai_tool_schemas(ctx: TwinToolContext) -> list[dict[str, Any]]:
                     "type": "function",
                     "function": {
                         "name": "research_web",
-                        "description": "Google search via Serper (requires SERPER_API_KEY).",
+                        "description": (
+                            "Live Google web/news search via Serper for **recent public context**: headlines, "
+                            "product releases, trends, stats, fact-checking. Use when the question needs "
+                            "information beyond the creator profile or training cutoff—not for the creator's "
+                            "private voice (use query_creator_knowledge / voice profile). "
+                            "Requires SERPER_API_KEY."
+                        ),
                         "parameters": {
                             "type": "object",
-                            "properties": {"query": {"type": "string"}},
+                            "properties": {
+                                "query": {
+                                    "type": "string",
+                                    "description": "Focused search query; include year or “latest” when recency matters.",
+                                },
+                                "mode": {
+                                    "type": "string",
+                                    "enum": ["web", "news"],
+                                    "default": "web",
+                                    "description": (
+                                        "Use \"news\" for timely headlines and breaking stories; "
+                                        "\"web\" for general organic results."
+                                    ),
+                                },
+                            },
                             "required": ["query"],
                             "additionalProperties": False,
                         },
@@ -175,7 +230,12 @@ def _get_voice_block(ctx: TwinToolContext) -> str:
     if not ctx.voice_profile_id:
         return "No voice profile is set for this chat. Use neutral platform-native tone."
     try:
-        return load_voice_profile(ctx.voice_profile_id).summary_block
+        p = load_voice_profile(ctx.voice_profile_id)
+        block = p.summary_block
+        ds = getattr(p, "delivery_style", None)
+        if isinstance(ds, str) and ds.strip():
+            block = f"{block}\n\n— On-camera / spoken delivery —\n{ds.strip()}"
+        return block
     except Exception as e:
         _LOG.warning("voice load failed: %s", e)
         return "Voice profile missing or unreadable; use neutral tone."
@@ -243,6 +303,22 @@ async def execute_twin_tool(
         except Exception as e:
             return f"draft_post failed: {e}", None
 
+    if name == "query_creator_knowledge":
+        if not ctx.tool_mongodb:
+            return "MongoDB knowledge tool is disabled for this session.", None
+        if not mongodb_configured():
+            return "MongoDB is not configured on the server (MONGODB_URI).", None
+        if not ctx.voice_profile_id:
+            return "No voice profile on this chat — select one to search creator knowledge.", None
+        q = str(args.get("query", "")).strip()
+        if not q:
+            return "query is required.", None
+
+        def _run() -> str:
+            return search_voice_context(ctx.voice_profile_id, q)
+
+        return await asyncio.to_thread(_run), None
+
     if name == "query_memory":
         if not ctx.tool_memory:
             return "Memory tool is disabled for this session.", None
@@ -277,10 +353,17 @@ async def execute_twin_tool(
         q = str(args.get("query", "")).strip()
         if not q:
             return "query is required.", None
+        if not (os.getenv("SERPER_API_KEY") or "").strip():
+            return (
+                "Web search is unavailable: set SERPER_API_KEY on the Launchy API server (.env), then retry.",
+                None,
+            )
+        mode = str(args.get("mode", "web") or "web").strip().lower()
+        search_type = "news" if mode == "news" else "search"
 
         def _run() -> str:
             serp = SerperDevTool()
-            raw = _invoke_tool_like(serp, {"search_query": q})
+            raw = _invoke_tool_like(serp, {"search_query": q, "search_type": search_type})
             return raw if isinstance(raw, str) else json.dumps(raw, default=str)
 
         return await asyncio.to_thread(_run), None

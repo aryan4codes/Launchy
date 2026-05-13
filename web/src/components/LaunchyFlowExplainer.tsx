@@ -15,36 +15,50 @@ export function LaunchyFlowExplainer({
     return (
       <div
         className={cn(
-          "rounded-xl border border-border/80 bg-muted/25 px-3 py-2.5 text-left shadow-sm backdrop-blur-sm dark:bg-muted/40",
+          "rounded-[2.75rem] border border-border/60 bg-gradient-to-b from-muted/30 to-transparent px-4 py-6 text-left shadow-sm backdrop-blur-sm dark:border-border dark:from-muted/25 sm:px-5",
           className,
         )}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">How Launchy fits together</p>
-        <ol className="mt-2 space-y-1.5 text-[12px] leading-snug text-foreground/90">
-          <li className="flex gap-2">
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">1.</span>
-            <span>
-              <Link to="/voice" className="font-medium text-foreground underline-offset-4 hover:underline">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700/90 dark:text-emerald-400">
+          How Launchy fits together
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3 sm:gap-4">
+          <div className="relative overflow-hidden rounded-[2rem] border border-emerald-200/50 bg-gradient-to-br from-emerald-50/90 to-white/80 p-4 shadow-sm dark:border-emerald-500/25 dark:from-emerald-950/35 dark:to-card/80 sm:p-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white shadow-md shadow-emerald-500/30">
+              1
+            </div>
+            <p className="mt-3 text-xs font-semibold leading-snug text-foreground">
+              <Link to="/twin?tab=train" className="text-emerald-800 underline-offset-4 hover:underline dark:text-emerald-200">
                 Train your voice
-              </Link>{" "}
-              once — Launchy learns tone and DO/DON’T rules from your writing.
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">2.</span>
-            <span>
-              Use <strong className="font-medium">Studio</strong> for visual workflows or{" "}
-              <Link to="/twin" className="font-medium underline-offset-4 hover:underline">
+              </Link>
+              <span className="font-normal text-muted-foreground"> — tone + DO/DON&apos;T lines from real posts.</span>
+            </p>
+          </div>
+          <div className="relative overflow-hidden rounded-[2rem] border border-violet-200/40 bg-gradient-to-br from-violet-50/80 to-white/80 p-4 shadow-sm dark:border-border dark:from-violet-950/30 dark:to-card/80 sm:p-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-500 text-xs font-bold text-white shadow-md">
+              2
+            </div>
+            <p className="mt-3 text-xs font-semibold leading-snug text-foreground">
+              <Link to="/studio" className="text-violet-900 underline-offset-4 hover:underline dark:text-violet-200">
+                Studio
+              </Link>
+              <span className="font-normal text-muted-foreground"> workflows or </span>
+              <Link to="/twin" className="text-violet-900 underline-offset-4 hover:underline dark:text-violet-200">
                 Twin chat
-              </Link>{" "}
-              to ask questions and run templates in plain English.
-            </span>
-          </li>
-          <li className="flex gap-2">
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">3.</span>
-            <span>The voice you mark <strong className="font-medium">Active</strong> applies to Twin and to the Brand voice step on the canvas.</span>
-          </li>
-        </ol>
+              </Link>
+              <span className="font-normal text-muted-foreground"> in plain English.</span>
+            </p>
+          </div>
+          <div className="relative overflow-hidden rounded-[2rem] border border-amber-200/45 bg-gradient-to-br from-amber-50/80 to-white/80 p-4 shadow-sm dark:border-amber-500/20 dark:from-amber-950/25 dark:to-card/80 sm:p-5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-bold text-white shadow-md">
+              3
+            </div>
+            <p className="mt-3 text-xs leading-snug text-muted-foreground">
+              Mark one profile <span className="font-semibold text-foreground">Active</span> — Twin and the{" "}
+              <strong className="font-semibold text-foreground">Brand voice</strong> step both follow it.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -60,7 +74,7 @@ export function LaunchyFlowExplainer({
           Paste posts or links. Launchy extracts how you sound so generated copy stays on-brand.
         </p>
         <Link
-          to="/voice"
+          to="/twin?tab=train"
           className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
         >
           Train or edit profiles <ArrowRight className="h-3 w-3" aria-hidden />
@@ -76,7 +90,7 @@ export function LaunchyFlowExplainer({
           step so drafts match your profile.
         </p>
         <Link
-          to="/"
+          to="/studio"
           className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
         >
           Open Studio <ArrowRight className="h-3 w-3" aria-hidden />

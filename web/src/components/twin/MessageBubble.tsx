@@ -7,10 +7,10 @@ export function MessageBubble({ role, content }: { role: "user" | "twin"; conten
     <div className={cn("flex", twin ? "justify-start" : "justify-end")}>
       <div
         className={cn(
-          "max-w-[min(560px,90vw)] rounded-[1.25rem] px-4 py-2.5 text-sm shadow-md",
+          "max-w-[min(560px,90vw)] rounded-2xl px-4 py-2.5 text-sm",
           twin
-            ? "border border-white/80 bg-white/95 text-zinc-950 shadow-black/5 ring-1 ring-fuchsia-200/40 dark:border-border dark:bg-card dark:text-foreground dark:ring-border"
-            : "bg-gradient-to-br from-fuchsia-500 via-rose-500 to-orange-400 text-white shadow-lg shadow-rose-400/25",
+            ? "border border-zinc-200/90 bg-white text-zinc-900 shadow-sm dark:border-border dark:bg-card dark:text-foreground"
+            : "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-950",
         )}
       >
         {twin ? <MarkdownProse content={content} className="!prose-sm dark:prose-invert prose-p:my-1 prose-headings:text-zinc-900" /> : <p className="whitespace-pre-wrap">{content}</p>}

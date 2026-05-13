@@ -2,9 +2,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import CampaignLandingPage from "@/pages/CampaignLandingPage";
 import CampaignPage from "@/pages/CampaignPage";
+import DigitalTwinPage from "@/pages/DigitalTwinPage";
 import LandingPage from "@/pages/LandingPage";
 import ResultsPage from "@/pages/ResultsPage";
-import TwinPage from "@/pages/TwinPage";
 import VoicePage from "@/pages/VoicePage";
 import WorkflowStudio from "@/WorkflowStudio";
 
@@ -21,8 +21,8 @@ export default function App() {
         <Route path="/studio" element={<WorkflowStudio />} />
         <Route path="/campaigns" element={<CampaignLandingPage />} />
         <Route path="/campaigns/:runId" element={<CampaignPage />} />
+        <Route path="/twin" element={<DigitalTwinPage />} />
         <Route path="/voice" element={<VoicePage />} />
-        <Route path="/twin" element={<TwinPage />} />
         <Route path="/results/:runId" element={<ResultsPage />} />
       </Routes>
     </BrowserRouter>

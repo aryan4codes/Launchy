@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from voice.schema import VoiceProfile, VoiceProfilerLLMOutput
+from voice.schema import ReelTranscription, VoiceProfile, VoiceProfilerLLMOutput
 
 
 def profiles_dir() -> Path:
@@ -65,11 +65,13 @@ def build_voice_profile(
     profile_id: str | None = None,
     created_at: str | None = None,
     updated_at: str | None = None,
+    transcriptions: list[dict] | None = None,
 ) -> VoiceProfile:
     now = datetime.now(timezone.utc).isoformat()
     pid = profile_id or str(uuid.uuid4())
     ca = created_at or now
     ua = updated_at or now
+    parsed_trans = [ReelTranscription.model_validate(t) for t in (transcriptions or [])]
     return VoiceProfile(
         profile_id=pid,
         created_at=ca,
@@ -82,5 +84,7 @@ def build_voice_profile(
         do_list=draft.do_list,
         dont_list=draft.dont_list,
         example_hooks=draft.example_hooks,
+        delivery_style=draft.delivery_style,
         summary_block=draft.summary_block,
+        transcriptions=parsed_trans,
     )

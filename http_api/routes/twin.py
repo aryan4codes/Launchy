@@ -35,6 +35,7 @@ class TwinMessageCreate(BaseModel):
     tool_memory: bool = True
     tool_research: bool = True
     tool_workflow: bool = True
+    tool_mongodb: bool = True
 
 
 class TwinSessionPatch(BaseModel):
@@ -131,6 +132,7 @@ async def post_message_sse(session_id: str, body: TwinMessageCreate) -> Streamin
         tool_memory=body.tool_memory,
         tool_research=body.tool_research,
         tool_workflow=body.tool_workflow,
+        tool_mongodb=body.tool_mongodb,
     )
 
     async def event_gen():

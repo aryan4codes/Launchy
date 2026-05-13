@@ -20,15 +20,15 @@ export function Composer({
   return (
     <div
       className={cn(
-        "flex gap-2 border-t border-fuchsia-200/60 bg-white/90 p-3 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.08)] dark:border-border dark:bg-card/95",
+        "flex items-end gap-2 border-t border-zinc-200/90 bg-zinc-50/80 p-3 dark:border-border dark:bg-card/90",
         className,
       )}
     >
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Ask your Twin… (Shift+Enter for newline)"
-        className="min-h-[72px] flex-1 resize-none border-fuchsia-200/80 bg-white text-sm text-zinc-950 placeholder:text-zinc-500 focus-visible:ring-fuchsia-300 dark:border-border dark:bg-background dark:text-foreground"
+        placeholder="Message… (Shift+Enter for new line)"
+        className="min-h-[52px] flex-1 resize-none rounded-xl border-zinc-200 bg-white text-sm text-zinc-950 placeholder:text-zinc-400 focus-visible:border-zinc-400 focus-visible:ring-zinc-400/30 dark:border-border dark:bg-background dark:text-foreground"
         disabled={disabled}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
@@ -41,7 +41,7 @@ export function Composer({
         type="button"
         size="sm"
         disabled={disabled || !value.trim()}
-        className="h-[72px] shrink-0 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-rose-500 to-orange-400 px-5 text-white shadow-lg shadow-rose-400/30 hover:opacity-95 disabled:opacity-50"
+        className="h-11 w-11 shrink-0 rounded-xl bg-zinc-900 p-0 text-white hover:bg-zinc-800 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white"
         onClick={() => onSend()}
       >
         <Send className="h-4 w-4" aria-hidden />

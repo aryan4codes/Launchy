@@ -120,6 +120,14 @@ export async function getWorkflowRun(runId: string): Promise<unknown> {
 // --- Voice / Twin ---
 export type VoiceSampleRow = { kind: string; value: string };
 
+export type ReelTranscription = {
+  reel_index: number;
+  shortcode: string;
+  url: string;
+  caption: string;
+  transcript: string;
+};
+
 export type VoiceProfile = {
   profile_id: string;
   creator_name: string;
@@ -130,10 +138,21 @@ export type VoiceProfile = {
   do_list: string[];
   dont_list: string[];
   example_hooks: string[];
+  /** On-camera / spoken delivery notes when reels were transcribed. */
+  delivery_style?: string;
   summary_block: string;
   created_at: string;
   updated_at: string;
+  transcriptions?: ReelTranscription[];
 };
+
+/** SSE events emitted by POST /voice/profiles/stream */
+export type VoiceStreamEvent =
+  | { type: 'step'; step: string; msg: string; index?: number; total?: number; reel_count?: number; handle?: string; shortcode?: string }
+  | { type: 'transcription'; reel_index: number; shortcode: string; url: string; caption: string; transcript: string }
+  | { type: 'heartbeat' }
+  | { type: 'done'; profile: VoiceProfile }
+  | { type: 'error'; detail: string };
 
 export async function listVoiceProfiles(): Promise<VoiceProfile[]> {
   return j(await fetch(apiUrl('/voice/profiles')));
@@ -150,6 +169,55 @@ export async function createVoiceProfile(payload: {
       body: JSON.stringify(payload),
     }),
   );
+}
+
+/**
+ * Streaming version of profile creation. Calls `onEvent` for every SSE event and
+ * resolves with the final VoiceProfile when the stream completes.
+ */
+export function createVoiceProfileStream(
+  payload: { creator_name: string; samples: VoiceSampleRow[] },
+  onEvent: (event: VoiceStreamEvent) => void,
+): Promise<VoiceProfile> {
+  return new Promise((resolve, reject) => {
+    fetch(apiUrl('/voice/profiles/stream'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async (res) => {
+        if (!res.ok) return reject(new Error(`${res.status} ${await res.text()}`));
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const evt = JSON.parse(line.slice(6)) as VoiceStreamEvent;
+              if (evt.type === 'done') {
+                resolve(evt.profile);
+                return;
+              }
+              if (evt.type === 'error') {
+                reject(new Error(evt.detail));
+                return;
+              }
+              onEvent(evt);
+            } catch {
+              // ignore parse errors on malformed lines
+            }
+          }
+        }
+        reject(new Error('Stream ended without completion'));
+      })
+      .catch(reject);
+  });
 }
 
 /** Re-collect samples and re-run the profiler (PUT). */

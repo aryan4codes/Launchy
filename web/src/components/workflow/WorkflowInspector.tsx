@@ -128,7 +128,7 @@ export function WorkflowInspector({
             <p className="font-medium text-emerald-950 dark:text-emerald-50">Where does the ID come from?</p>
             <p className="mt-1 text-muted-foreground">
               Open the{' '}
-              <Link to="/voice" className="font-medium text-foreground underline-offset-4 hover:underline">
+              <Link to="/twin?tab=train" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Voice
               </Link>{' '}
               page, create a profile, then copy its <code className="rounded bg-background/80 px-1 font-mono text-[10px]">profile_id</code> into

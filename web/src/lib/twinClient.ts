@@ -22,6 +22,7 @@ export async function streamTwinMessage(
     tool_memory: boolean;
     tool_research: boolean;
     tool_workflow: boolean;
+    tool_mongodb: boolean;
   },
   onEvent: (ev: TwinSseEvent) => void,
 ): Promise<void> {

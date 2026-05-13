@@ -5,6 +5,16 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
+class ReelTranscription(BaseModel):
+    """One transcribed reel collected during Instagram profiling."""
+
+    reel_index: int
+    shortcode: str
+    url: str = ""
+    caption: str = ""
+    transcript: str = ""
+
+
 class VoiceProfilerLLMOutput(BaseModel):
     """Structured output from the profiler agent (no IDs or timestamps)."""
 
@@ -29,10 +39,17 @@ class VoiceProfilerLLMOutput(BaseModel):
         min_length=1,
         max_length=8,
     )
+    delivery_style: str = Field(
+        default="",
+        description=(
+            "If SPOKEN_TRANSCRIPT lines exist: how they sound on camera (pace, energy, "
+            "fillers, sentence rhythm). Empty string if no usable spoken audio in samples."
+        ),
+    )
     summary_block: str = Field(
         description=(
             "Ready-to-inject prompt block: VOICE PROFILE — Name, Tone, Vocabulary, "
-            "Sentence style, DO, DON'T, Example hooks — compact and imperative."
+            "Sentence style, spoken delivery (if any), DO, DON'T, Example hooks — compact."
         ),
     )
 
@@ -44,6 +61,7 @@ class VoiceProfile(VoiceProfilerLLMOutput):
     created_at: str
     updated_at: str
     sample_count: int = Field(ge=0)
+    transcriptions: list[ReelTranscription] = Field(default_factory=list)
 
     def model_dump_for_json(self) -> dict:
         return self.model_dump(mode="json")

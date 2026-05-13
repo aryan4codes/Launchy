@@ -40,6 +40,11 @@ def run_cmd(
         help="Include Instagram stub tool (full Apify wiring pending)",
     ),
     run_id: str | None = typer.Option(None, "--run-id"),
+    voice_profile_id: str | None = typer.Option(
+        None,
+        "--voice-profile-id",
+        help="Optional saved voice profile UUID (Train your Twin) to inject into copy tasks.",
+    ),
 ) -> None:
     """Execute one AVCM pipeline run."""
     subs_list = [s.strip() for s in subreddits.split(",")] if subreddits else None
@@ -53,6 +58,7 @@ def run_cmd(
         top_k_memory=top_k_memory,
         include_instagram=instagram,
         run_id=run_id,
+        voice_profile_id=voice_profile_id,
     )
     ctrl = get_controller()
     result = ctrl.run(cfg)

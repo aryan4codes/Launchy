@@ -10,6 +10,8 @@ import {
   Flame,
   Heart,
   Instagram,
+  MessageCircle,
+  Mic,
   PenLine,
   Sparkles,
   Stars,
@@ -239,6 +241,12 @@ export default function CampaignLandingPage() {
             Home
           </Link>
           <Link
+            to="/twin"
+            className="hidden h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white sm:inline-flex dark:border-border dark:bg-card dark:text-foreground"
+          >
+            Digital Twin
+          </Link>
+          <Link
             to="/studio"
             className="inline-flex h-9 items-center justify-center rounded-full border border-zinc-200 bg-white/90 px-4 text-sm font-semibold text-zinc-900 shadow-sm backdrop-blur transition hover:bg-white dark:border-border dark:bg-card dark:text-foreground"
           >
@@ -337,6 +345,43 @@ export default function CampaignLandingPage() {
                 </StaggerItem>
               ))}
             </StaggerReveal>
+          </div>
+        </section>
+
+        {/* Voice + Twin — deeper than campaign traits */}
+        <section className="relative mt-6 overflow-hidden rounded-[2rem] border border-violet-200/80 bg-gradient-to-br from-violet-50/95 via-fuchsia-50/80 to-white/90 px-5 py-6 shadow-lg shadow-violet-200/30 backdrop-blur dark:border-violet-500/35 dark:from-violet-950/40 dark:via-fuchsia-950/30 dark:to-card/90 dark:shadow-none">
+          <div className="pointer-events-none absolute -right-16 top-0 h-40 w-40 rounded-full bg-fuchsia-300/35 blur-3xl dark:opacity-40" />
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/90 shadow-sm ring-1 ring-violet-200 dark:bg-card dark:ring-border">
+                <Mic className="h-6 w-6 text-violet-600 dark:text-violet-300" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700 dark:text-violet-300">Same Digital Twin story</p>
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-zinc-950 dark:text-foreground">
+                  Want copy that matches how you <span className="italic text-fuchsia-700 dark:text-fuchsia-300">sound</span>, not just campaign traits?
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-700 dark:text-muted-foreground">
+                  This page sets lightweight persona for runs. Train a full voice (posts, URLs, or Instagram) and chat with the Twin in one hub — then campaigns and Studio can pull that profile.
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+              <Link
+                to="/twin?tab=train"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-violet-500 to-sky-500 px-5 text-sm font-semibold text-white shadow-md shadow-fuchsia-400/35 transition hover:opacity-95"
+              >
+                <Mic className="h-4 w-4" aria-hidden />
+                Train voice
+              </Link>
+              <Link
+                to="/twin"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-violet-200 bg-white/95 px-5 text-sm font-semibold text-zinc-900 shadow-sm transition hover:bg-white dark:border-border dark:bg-card dark:text-foreground"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden />
+                Twin chat
+              </Link>
+            </div>
           </div>
         </section>
 

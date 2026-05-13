@@ -20,6 +20,6 @@ memory/performance_db/*
 
 /workflows/stored
 
-
 *.env
 web/.env.production
+voice/profiles/*.json

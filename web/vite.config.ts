@@ -3,6 +3,12 @@ import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 
+function proxyTargetWsFromHttp(httpTarget: string): string {
+  const u = new URL(httpTarget);
+  const proto = u.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${u.host}`;
+}
+
 export default defineConfig(({ mode }) => {
   const root = path.resolve(__dirname);
   const fromMode = {
@@ -20,6 +26,15 @@ export default defineConfig(({ mode }) => {
   const logoDevKey =
     (fromMode.NEXT_PUBLIC_LOGO_DEV_KEY || fromMode.VITE_LOGO_DEV_KEY || "").trim() ||
     (fromProd.NEXT_PUBLIC_LOGO_DEV_KEY || fromProd.VITE_LOGO_DEV_KEY || "").trim();
+
+  const apiProxyTarget = (
+    fromMode.VITE_API_PROXY_TARGET ||
+    fromMode.VITE_API_ORIGIN ||
+    "http://127.0.0.1:8000"
+  )
+    .trim()
+    .replace(/\/+$/, "");
+  const wsProxyTarget = proxyTargetWsFromHttp(apiProxyTarget);
 
   return {
     plugins: [react()],
@@ -52,14 +67,17 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
-        "/workflows": { target: "http://127.0.0.1:8000", changeOrigin: true },
-        "/workflow-runs": { target: "http://127.0.0.1:8000", changeOrigin: true, ws: true },
-        "/creator-runs": { target: "http://127.0.0.1:8000", changeOrigin: true },
-        "/artifacts": { target: "http://127.0.0.1:8000", changeOrigin: true },
-        "/runs": { target: "http://127.0.0.1:8000", changeOrigin: true },
-        "/memory": { target: "http://127.0.0.1:8000", changeOrigin: true },
+        "/workflows": { target: apiProxyTarget, changeOrigin: true },
+        "/workflow-runs": { target: apiProxyTarget, changeOrigin: true, ws: true },
+        "/creator-runs": { target: apiProxyTarget, changeOrigin: true },
+        "/artifacts": { target: apiProxyTarget, changeOrigin: true },
+        "/runs": { target: apiProxyTarget, changeOrigin: true },
+        "/memory": { target: apiProxyTarget, changeOrigin: true },
+        // Do not proxy `/voice` or `/twin` alone — those are SPA routes. API lives under these prefixes.
+        "/voice/profiles": { target: apiProxyTarget, changeOrigin: true },
+        "/twin/sessions": { target: apiProxyTarget, changeOrigin: true },
         "/ws": {
-          target: "ws://127.0.0.1:8000",
+          target: wsProxyTarget,
           ws: true,
           changeOrigin: true,
         },

@@ -122,6 +122,12 @@ class MemoryQueryParams(BaseModel):
     top_k: Annotated[int, Field(ge=1, le=40)] | None = None
 
 
+class VoiceLoadParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    profile_id: str = Field(min_length=1, description="Voice profile UUID from Train your Twin.")
+
+
 class MemoryWriteParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

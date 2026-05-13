@@ -98,12 +98,42 @@ class CrewAIPipelineRunner:
         specs = agents_yaml["agents"]
         agent_objs: dict[str, Agent] = {}
 
+        voice_block = "No voice profile — use a clean platform-native voice."
+        if getattr(config, "voice_profile_id", None):
+            try:
+                from voice.store import load_profile
+
+                voice_block = (
+                    load_profile(config.voice_profile_id).summary_block.strip()
+                    or voice_block
+                )
+            except Exception as e:
+                _LOG.warning("voice profile load failed: %s", e)
+
+        ctx = {
+            "niche": config.niche,
+            "subreddits": config.resolved_subreddits_csv(),
+            "serper_query_hints": _serper_query_hints(config.niche),
+            "platforms": ", ".join(config.platforms),
+            "angles": config.angles,
+            "variations": config.variations,
+            "run_id": run_id,
+            "top_k_memory": config.top_k_memory,
+            "rubric_block": rubric_prompt_block(),
+            "voice_block": voice_block,
+        }
+
         def make_agent(key: str, tools: list) -> Agent:
             s = specs[key]
+
+            def _fmt(fragment: object) -> str:
+                txt = fragment if isinstance(fragment, str) else str(fragment)
+                return txt.format(**ctx)
+
             return Agent(
-                role=s["role"],
-                goal=s["goal"],
-                backstory=s["backstory"],
+                role=_fmt(s["role"]),
+                goal=_fmt(s["goal"]),
+                backstory=_fmt(s["backstory"]),
                 tools=tools,
                 llm=model,
                 verbose=False,
@@ -121,18 +151,6 @@ class CrewAIPipelineRunner:
             "performance_analyst",
             [mq, mw],
         )
-
-        ctx = {
-            "niche": config.niche,
-            "subreddits": config.resolved_subreddits_csv(),
-            "serper_query_hints": _serper_query_hints(config.niche),
-            "platforms": ", ".join(config.platforms),
-            "angles": config.angles,
-            "variations": config.variations,
-            "run_id": run_id,
-            "top_k_memory": config.top_k_memory,
-            "rubric_block": rubric_prompt_block(),
-        }
 
         tasks_list: list[Task] = []
         for spec in tasks_yaml["tasks"]:

@@ -38,6 +38,10 @@ tasks:
     description: |
       Niche: {niche}
       Platforms to cover: {platforms}
+
+      Voice profile:
+      {voice_block}
+
       Produce exactly {angles} campaign angles grounded in the trend opportunities above and this niche —
       no generic viral filler.
       Each line must name trend title, campaign_big_idea, primary platform (from list),
@@ -48,6 +52,10 @@ tasks:
     agent: copywriter
     description: |
       Niche: {niche}
+
+      Voice profile:
+      {voice_block}
+
       For each campaign angle, write {variations} persona-aligned variations per platform in {platforms}.
       Total combinations may be large — prioritize clarity, native tone, and useful CTAs per platform.
       Include hook as first line per variation. Do not pivot to unrelated industries or regions unless the trend explicitly does.
@@ -58,6 +66,10 @@ tasks:
     agent: creative_director
     description: |
       Niche: {niche}
+
+      Voice profile:
+      {voice_block}
+
       For every variation from the prior step, append campaign production guidance:
       visual_style, format_type (carousel/reel/static/thread), color mood, overlay notes,
       on_screen_text, thumbnail concept, and repurposing notes.

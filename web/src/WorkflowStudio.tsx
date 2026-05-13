@@ -515,13 +515,19 @@ export default function WorkflowStudio() {
   const addNodeAtPosition = useCallback(
     (wfType: string, position: { x: number; y: number }) => {
       const id = `n-${crypto.randomUUID().slice(0, 8)}`
+      const base: WorkflowNodeData = { wfType, label: id }
+      if (wfType === 'voice.load') {
+        const pid =
+          typeof localStorage !== 'undefined' ? localStorage.getItem('launchy_active_voice_profile') : ''
+        if (pid) base.profile_id = pid
+      }
       setNodes((nds) => [
         ...nds,
         {
           id,
           type: 'wf',
           position,
-          data: { wfType, label: id } satisfies WorkflowNodeData,
+          data: base,
         },
       ])
       setSelectedId(id)

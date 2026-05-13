@@ -14,6 +14,8 @@
 - **`tools/`** CrewAI tools + Chroma helpers.
 - **`cli/`** and **`api/`** are thin shims over `PipelineController` plus workflow HTTP routes.
 - **`workflow/`** — DAG specs, node handlers, and `WorkflowEngine`. **Product stance**: prioritize non-technical creators — guided inspector fields, minimal jargon in copy, collapsible tuning (see `workflow/AGENTS.md` and web inspector).
+- **`voice/`** — saved brand voice JSON under `voice/profiles/`; profiler in `agents/voice_profiler.py`; optional `RunConfig.voice_profile_id`.
+- **`twin/`** — session JSON/JSONL under `outputs/twin_sessions/`; SSE chat in `http_api/routes/twin.py` + `agents/twin_agent.py`.
 
 ## Web app & marketing (`web/`)
 

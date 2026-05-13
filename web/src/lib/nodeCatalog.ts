@@ -18,6 +18,7 @@ import {
   Play,
   Search,
   Sparkles,
+  User,
   Workflow,
 } from "lucide-react";
 
@@ -211,6 +212,16 @@ const CATALOG: NodeCatalogEntry[] = [
     easyInspector: { query_template: "search_query_parts" },
   },
   {
+    type: "voice.load",
+    label: "Brand voice",
+    short: "Inject your trained voice into the pipeline.",
+    description:
+      "Loads a saved voice profile (tone, vocabulary, do/don't rules) and exposes it as {{ voice.voice_block }} for downstream agents.",
+    category: "memory",
+    icon: User,
+    previewKeys: ["profile_id"],
+  },
+  {
     type: "memory.write",
     label: "Memory write",
     short: "Persist a piece + score into Chroma.",
@@ -324,6 +335,7 @@ const GENERAL_TEMPLATE_ORDER: readonly string[] = [
   "avcm_classic",
   "launchy_virality_plus_images",
   "avcm_with_images",
+  "launchy_with_voice",
   "research_only",
   "tweet_only",
 ];
@@ -389,6 +401,15 @@ export const TEMPLATE_META: Record<string, TemplateMeta> = {
     description:
       "Full research-through-score flow plus one FLUX Dev hero image from your topic and brief.",
     tagline: "Same growth pipeline plus an AI hero image",
+    category: "general",
+  },
+  launchy_with_voice: {
+    id: "launchy_with_voice",
+    label: "Brand voice tweet",
+    description:
+      "Loads your saved Twin voice profile, then drafts one short post grounded in your topic. Set profile_id on the Brand voice block.",
+    tagline: "One post that sounds like you",
+    badge: "Voice",
     category: "general",
   },
   research_only: {

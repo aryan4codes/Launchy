@@ -221,3 +221,144 @@ def instagram_creator_post_signals(usernames: str, posts_per_profile: int = 12) 
     Uses Apify profile-posts actor. Requires APIFY_API_TOKEN and `uv sync --extra instagram`.
     """
     return fetch_instagram_creator_posts_markdown(usernames, posts_per_profile)
+
+
+def _is_reel_row(item: dict[str, Any]) -> bool:
+    u = str(item.get("url") or item.get("postUrl") or item.get("shortCodeUrl") or "").lower()
+    if "/reel/" in u:
+        return True
+    pt = str(item.get("productType") or item.get("product_type") or "").lower()
+    if pt in {"clips", "reel"}:
+        return True
+    if item.get("isReel") is True or item.get("is_reel") is True:
+        return True
+    mt = str(item.get("type") or item.get("mediaType") or "").lower()
+    if mt in {"clips", "reel"}:
+        return True
+    return False
+
+
+def _video_url_from_item(item: dict[str, Any]) -> str:
+    for k in ("videoUrl", "video_url", "playbackUrl", "videoPlayUrl", "videoDownloadUrl", "downloadUrl"):
+        v = item.get(k)
+        if isinstance(v, str) and v.strip().startswith("http"):
+            return v.strip()
+    # Nested variants from some actors
+    cand = item.get("video")
+    if isinstance(cand, dict):
+        for k in ("url", "playableUrl", "playable_url"):
+            v = cand.get(k)
+            if isinstance(v, str) and v.startswith("http"):
+                return v.strip()
+    return ""
+
+
+def _shortcode_from_item(item: dict[str, Any]) -> str:
+    for k in ("shortCode", "shortcode", "id"):
+        v = item.get(k)
+        if isinstance(v, str) and v.strip():
+            return v.strip().split("_")[0][:64]
+    u = str(item.get("url") or item.get("postUrl") or "")
+    if "/reel/" in u:
+        try:
+            seg = u.split("/reel/", 1)[1].split("/")[0].split("?")[0]
+            return seg[:64] if seg else "post"
+        except (IndexError, ValueError):
+            pass
+    if "/p/" in u:
+        try:
+            seg = u.split("/p/", 1)[1].split("/")[0].split("?")[0]
+            return seg[:64] if seg else "post"
+        except (IndexError, ValueError):
+            pass
+    return "post"
+
+
+def list_instagram_profile_reels_for_voice(
+    username_or_url: str,
+    *,
+    max_reels: int,
+    posts_per_profile: int = 50,
+) -> tuple[list[dict[str, Any]], str | None]:
+    """
+    Public reels for one profile via the same Apify profile-posts actor.
+    Returns rows with at least caption + optional video URL for transcription.
+    Second value is an error string when Apify is unavailable or nothing matched.
+    """
+    users = normalize_instagram_usernames(username_or_url)
+    if not users or len(users) != 1:
+        return [], "Provide one Instagram profile URL or handle (e.g. instagram.com/yourname)."
+    if max_reels < 1:
+        return [], None
+
+    client, err = _require_apify_client()
+    if err:
+        return [], err
+
+    actor_id = (
+        os.getenv("APIFY_INSTAGRAM_PROFILE_ACTOR", _DEFAULT_PROFILE_POSTS_ACTOR).strip()
+        or _DEFAULT_PROFILE_POSTS_ACTOR
+    )
+    safe_per = max(5, min(int(posts_per_profile), 50))
+    run_input: dict[str, Any] = {
+        "instagramUsernames": users,
+        "postsPerProfile": safe_per,
+    }
+    try:
+        assert client is not None
+        run = client.actor(actor_id).call(run_input=run_input)
+        dataset_id = run.get("defaultDatasetId") if isinstance(run, dict) else None
+        if not dataset_id:
+            return [], f"No dataset returned from Apify actor `{actor_id}`."
+        dataset_payload = client.dataset(dataset_id).list_items(limit=min(_MAX_DATASET_ITEMS, safe_per + 5))
+        items = _extract_items(dataset_payload)
+    except Exception as exc:  # noqa: BLE001
+        _LOG.warning("instagram reels fetch failed: %s", exc)
+        return [], f"Instagram Apify fetch failed: {exc}"
+
+    reels: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if not _is_reel_row(item) and not (
+            _video_url_from_item(item) and str(item.get("type") or "").lower() == "video"
+        ):
+            continue
+        sc = _shortcode_from_item(item)
+        vu = _video_url_from_item(item)
+        cap = str(item.get("caption") or item.get("text") or "").strip()
+        reels.append(
+            {
+                "shortcode": sc,
+                "videoUrl": vu,
+                "caption": cap,
+                "url": str(item.get("url") or item.get("postUrl") or ""),
+            }
+        )
+        if len(reels) >= max_reels:
+            break
+
+    # If nothing matched reel heuristics, fall back to any video rows with a video URL
+    if not reels:
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            vu = _video_url_from_item(item)
+            if not vu:
+                continue
+            sc = _shortcode_from_item(item)
+            cap = str(item.get("caption") or item.get("text") or "").strip()
+            reels.append(
+                {
+                    "shortcode": sc,
+                    "videoUrl": vu,
+                    "caption": cap,
+                    "url": str(item.get("url") or item.get("postUrl") or ""),
+                }
+            )
+            if len(reels) >= max_reels:
+                break
+
+    if not reels:
+        return [], "No public video/reel items returned for this profile (private account or actor output changed)."
+    return reels, None

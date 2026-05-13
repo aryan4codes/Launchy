@@ -16,6 +16,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { MarkdownProse } from "@/components/MarkdownProse";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { useLocalStorageDialogs } from "@/components/creator/LocalStorageDialogs";
 import { HorizontalRunProgress } from "@/components/workflow/HorizontalRunProgress";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
@@ -219,15 +220,28 @@ function CampaignWorkspace({
   generatedImages: DisplayImageBlock[];
 }) {
   const defaultTab = model.platformAssets.length ? `${model.platformAssets[0].platform}-0` : "campaign";
+  const { promptText } = useLocalStorageDialogs();
 
-  const onSavePersonaMemory = () => {
-    const label = window.prompt("Label for this persona memory", model.topic ?? "My persona")?.trim();
+  const onSavePersonaMemory = async () => {
+    const label = await promptText({
+      title: "Label for this persona memory",
+      message: "Saved snippets live in this browser and show up when you build your persona shell.",
+      fieldLabel: "Label",
+      defaultValue: model.topic ?? "My persona",
+      confirmLabel: "Save snippet",
+    });
     if (!label) return;
     savePersonaSnippet({ label, summary: summarizePersonaFromDisplay(model), sourceRunId: runId });
   };
 
-  const onSaveCampaignMemory = () => {
-    const label = window.prompt("Label for this campaign memory", model.topic ?? "My campaign")?.trim();
+  const onSaveCampaignMemory = async () => {
+    const label = await promptText({
+      title: "Label for this campaign memory",
+      message: "Saved snippets live in this browser and help you reuse campaign context on future runs.",
+      fieldLabel: "Label",
+      defaultValue: model.topic ?? "My campaign",
+      confirmLabel: "Save snippet",
+    });
     if (!label) return;
     saveCampaignSnippet({ label, summary: summarizeCampaignFromDisplay(model), sourceRunId: runId });
   };

@@ -26,8 +26,16 @@ def render_template(template_str: str, context: dict[str, Any]) -> str:
 def merge_context(workflow_inputs: dict[str, Any], upstream_outputs: dict[str, Any]) -> dict[str, Any]:
     """Flatten workflow inputs plus per-node upstream outputs for templates."""
 
-    return {
+    base: dict[str, Any] = {
         **workflow_inputs,
         "upstream": upstream_outputs,
         "nodes": upstream_outputs,
     }
+    voice_data: dict[str, Any] | None = None
+    for _, out in upstream_outputs.items():
+        if isinstance(out, dict) and "voice_block" in out:
+            voice_data = out
+            break
+    if voice_data is not None:
+        base["voice"] = voice_data
+    return base
